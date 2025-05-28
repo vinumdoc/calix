@@ -1,0 +1,76 @@
+@precedence { textPrec @left }
+@top File { statement* }
+
+@skip { space }
+
+
+statement {
+  String | Text | DryDefinition | DryGlobalDefinition | DryCall | DryComment | SweetCall | GroupSweetCall | ChildrenShot
+}
+
+Body {
+  statement*
+}
+
+ChildrenShot {
+  "$*"
+}
+
+Text {
+  textChar+ !textPrec
+}
+
+DryDefinition {
+  "[" Identifier? ":" Body "]"
+}
+
+DryCall {
+  "[" Identifier Body "]"
+}
+
+DryGlobalDefinition {
+  "[" Identifier "::" Body "]"
+}
+
+DryComment {
+  "[" "#" commentContent* "]"
+}
+
+SweetCall {
+  "." Identifier
+}
+
+GroupSweetCall {
+  "(" Body ")." Identifier
+}
+
+@skip {} {
+  String {
+    "<~" stringContent* stringEnd
+  }
+}
+
+@local tokens {
+  stringEnd { "~>" }
+  @else stringContent
+}
+
+@tokens {
+  commentContent { ![\]] }
+  textChar { ![\n] }
+  space { @whitespace+ }
+  Identifier { $[A-Za-z_] $[A-Za-z0-9_]* }
+
+  @precedence {
+    commentContent,
+    space,
+    "(",
+    ".",
+    "[",
+    "]",
+    ":",
+    textChar
+  }
+}
+
+@external propSource highlighting from "./highlight.js"
