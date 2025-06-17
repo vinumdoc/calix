@@ -1,10 +1,10 @@
 import type { RequestHandler } from './$types';
 import { spawn } from 'node:child_process';
-import { VINUM_PATH } from '$env/static/private';
 import { json } from '@sveltejs/kit';
 
 export const POST = (async ({ request }) => {
 	const vinumCode = await request.text();
+	const VINUM_PATH = '/usr/local/bin/vinumc';
 
 	const result = await new Promise<{ compiled: string; errors: string }>((resolve, reject) => {
 		const child = spawn(VINUM_PATH);

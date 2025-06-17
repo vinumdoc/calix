@@ -28,3 +28,4 @@ src/lib/paraglide
 
 # SQLite
 *.db
+project.inlang/project_id

@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: calix_db
+      POSTGRES_USER: ${POSTGRES_USER:-calix_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calix_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    profiles:
+      - dev
+      - prod
+
+  app:
+    build:
+      context: .
+      target: development-build
+    image: calix-dev
+    command: pnpm dev --host 0.0.0.0
+    volumes:
+      - .:/app:cached
+      - '${VINUM_PATH}:/usr/local/bin/vinumc:ro'
+    ports:
+      - '5173:5173'
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      - db
+    profiles:
+      - dev
+
+  app-prod:
+    build:
+      context: .
+      target: production-build
+    image: calix-prod
+    env_file: .env # pick up POSTGRES_USER/PASSWORD if you like
+    depends_on:
+      - db
+    ports:
+      - '3000:3000'
+    profiles:
+      - prod
+
+volumes:
+  pgdata:
