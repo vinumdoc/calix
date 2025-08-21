@@ -1,0 +1,21 @@
+# node
+node_modules
+pnpm-debug.log
+.vscode
+
+# project files
+local.db
+.env
+*.local
+*.log
+
+# build outputs
+build
+dist
+
+# git
+.git
+.gitignore
+
+# OS
+.DS_Store

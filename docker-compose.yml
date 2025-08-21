@@ -1,0 +1,90 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: calix_db
+      POSTGRES_USER: ${POSTGRES_USER:-calix_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-calix_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    profiles:
+      - dev
+      - prod
+
+  app-release:
+    build:
+      context: .
+      target: development-build
+      args:
+        VINUMC_SOURCE: release
+        VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+    image: calix-dev
+    command: pnpm dev --host 0.0.0.0
+    platform: linux/amd64
+    volumes:
+      - .:/app:cached
+      - node_modules:/app/node_modules
+    ports:
+      - '5173:5173'
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      VINUMC_SOURCE: release
+      VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+    depends_on:
+      - db
+    profiles:
+      - dev-release
+
+  app-local:
+    build:
+      context: .
+      target: development-build
+      args:
+        VINUMC_SOURCE: local
+        VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+    image: calix-dev
+    command: pnpm dev --host 0.0.0.0
+    platform: linux/amd64
+    volumes:
+      - .:/app:cached
+      - node_modules:/app/node_modules
+      - '${VINUMC_PATH}:/usr/local/bin/vinumc:ro'
+    ports:
+      - '5173:5173'
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      VINUMC_SOURCE: local
+      VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+    depends_on:
+      - db
+    profiles:
+      - dev-local
+
+  # Default app service (uses release)
+  app:
+    extends: app-release
+    profiles:
+      - dev
+
+  app-prod:
+    platform: linux/amd64
+    build:
+      context: .
+      target: production-build
+      args:
+        VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+    image: calix-prod
+    env_file: .env
+    depends_on:
+      - db
+    ports:
+      - '3000:3000'
+    profiles:
+      - prod
+
+volumes:
+  pgdata:
+  node_modules:
