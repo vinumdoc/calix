@@ -4,16 +4,16 @@
 	import Logo from './Logo.svelte';
 </script>
 
-<div class="mr-4 hidden md:flex">
+<div class="mr-4 flex">
 	<a href="/" class="mr-6 flex items-center space-x-2">
 		<Logo class="h-6 w-6" />
-		<span class="hidden font-bold xl:inline-block"> Vinum </span>
+		<span class="hidden font-bold sm:inline-block"> Vinum </span>
 	</a>
 	<nav class="flex items-center gap-6 text-sm">
 		<a
 			href="/docs"
 			class={cn(
-				'transition-colors hover:text-foreground/80',
+				'hover:text-foreground/80 transition-colors',
 				page.url.pathname === '/docs' ? 'text-foreground' : 'text-foreground/60'
 			)}
 		>
@@ -22,7 +22,7 @@
 		<a
 			href="/examples"
 			class={cn(
-				'transition-colors hover:text-foreground/80',
+				'hover:text-foreground/80 transition-colors',
 				page.url.pathname === '/examples' ? 'text-foreground' : 'text-foreground/60'
 			)}
 		>
