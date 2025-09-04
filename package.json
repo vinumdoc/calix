@@ -55,11 +55,11 @@
 	},
 	"dependencies": {
 		"@codemirror/commands": "^6.8.1",
-		"@codemirror/language": "^6.11.1",
+		"@codemirror/language": "^6.11.3",
 		"@codemirror/lint": "^6.8.5",
 		"@codemirror/search": "^6.5.11",
 		"@codemirror/state": "^6.5.2",
-		"@codemirror/view": "^6.37.1",
+		"@codemirror/view": "^6.38.2",
 		"@inlang/paraglide-js": "^2.0.13",
 		"@lezer/highlight": "^1.2.1",
 		"@lezer/lr": "^1.4.2",
@@ -67,7 +67,7 @@
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",
 		"better-sqlite3": "^11.10.0",
-		"codemirror": "^6.0.1",
+		"codemirror": "^6.0.2",
 		"drizzle-orm": "^0.44.1",
 		"mode-watcher": "^1.0.7"
 	},
