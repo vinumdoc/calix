@@ -1,4 +1,4 @@
-FROM node:20-slim AS development-build
+FROM node:22-slim AS development-build
 
 # install pnpm
 RUN npm install -g pnpm
@@ -30,7 +30,7 @@ RUN if [ "$VINUMC_SOURCE" = "release" ]; then \
 
 RUN pnpm build
 
-FROM node:20-slim AS production-build
+FROM node:22-slim AS production-build
 
 # create app directory
 WORKDIR /app
