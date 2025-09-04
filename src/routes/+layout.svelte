@@ -9,11 +9,11 @@
 
 <!-- <ModeWatcher /> -->
 
-	<div class="relative flex min-h-screen flex-col bg-background" id="page" data-vaul-drawer-wrapper>
-		<Header />
+<div class="bg-background relative flex min-h-screen flex-col" id="page" data-vaul-drawer-wrapper>
+	<Header />
 
-		{@render children()}
-	</div>
+	{@render children()}
+</div>
 
 <style>
 </style>
