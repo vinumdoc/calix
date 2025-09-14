@@ -1,18 +1,19 @@
-FROM node:22-slim AS development-build
+# ---- Base Stage ----
+# Sets up Node, pnpm, and copies package manifests.
+FROM node:22-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-# install pnpm
-RUN npm install -g pnpm
 
+FROM base AS development-build
+
+# copy source
+COPY . /app
 WORKDIR /app
 
-# copy package manifests & lockfile
-COPY package.json pnpm-lock.yaml* ./
-
 # install deps
-RUN pnpm install --frozen-lockfile
-
-# copy the rest of source & build
-COPY . .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # Build-time environment variables (for build process)
 ARG DATABASE_URL="file:./local.db"
@@ -30,15 +31,15 @@ RUN if [ "$VINUMC_SOURCE" = "release" ]; then \
 
 RUN pnpm build
 
-FROM node:22-slim AS production-build
+FROM base AS production-build
 
 # create app directory
 WORKDIR /app
 
 # install only production deps
-COPY package.json pnpm-lock.yaml* ./
-RUN npm install -g pnpm \
- && pnpm install --prod --frozen-lockfile \
+COPY package.json pnpm-lock.yaml* .npmrc ./
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile \
  && pnpm store prune
 
 # copy built output from development-build
