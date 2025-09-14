@@ -12,6 +12,7 @@ local.db
 # build outputs
 build
 dist
+.svelte-kit
 
 # git
 .git
