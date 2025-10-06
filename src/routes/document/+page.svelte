@@ -11,7 +11,7 @@
 		keymap,
 		lineNumbers
 	} from '@codemirror/view';
-	import { Pane, PaneGroup, PaneResizer } from 'paneforge';
+	import * as Resizable from '$lib/components/ui/resizable';
 	import type { PageProps } from './$types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -86,6 +86,11 @@
 						if (update.docChanged) {
 							compilePreview(update.state.doc);
 						}
+					}),
+					EditorView.theme({
+						'&': {
+							height: 'var(--editor-height)'
+						}
 					})
 				]
 			})
@@ -101,31 +106,32 @@
 	<title>Vinum editor</title>
 </svelte:head>
 
-<PaneGroup direction="horizontal" autoSaveId="document-editor-panes">
-	<Pane defaultSize={50}>
-		<div>
-			<div bind:this={container} class="editor"></div>
-		</div>
-	</Pane>
-	<PaneResizer></PaneResizer>
-	<Pane defaultSize={50}>
-		<iframe
-			bind:this={previewContainer}
-			title="Vinum preview"
-			class="preview"
-			srcdoc={data.compiled}
-			sandbox="allow-top-navigation allow-modals allow-pointer-lock allow-same-origin"
-		></iframe>
-	</Pane>
-</PaneGroup>
+<div class="pane-wrapper">
+	<Resizable.PaneGroup direction="horizontal" autoSaveId="document-editor-panes">
+		<Resizable.Pane defaultSize={50} class="h-full">
+			<div bind:this={container}></div>
+		</Resizable.Pane>
+		<Resizable.Handle></Resizable.Handle>
+		<Resizable.Pane defaultSize={50} class="h-full">
+			<iframe
+				bind:this={previewContainer}
+				title="Vinum preview"
+				class="preview"
+				srcdoc={data.compiled}
+				sandbox="allow-top-navigation allow-modals allow-pointer-lock allow-same-origin"
+			></iframe>
+		</Resizable.Pane>
+	</Resizable.PaneGroup>
+</div>
 
 <style>
+	.pane-wrapper {
+		--editor-height: calc(100vh - 3.5rem);
+		--editor-height: calc(100dvh - 3.5rem);
+		height: var(--editor-height);
+	}
 	iframe {
 		width: 100%;
 		height: 100%;
-	}
-	.editor,
-	:global(.cm-editor) {
-		height: 80vh;
 	}
 </style>
