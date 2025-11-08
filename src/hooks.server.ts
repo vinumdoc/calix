@@ -1,5 +1,5 @@
+import * as auth from '$lib/server/auth';
 import { sequence } from '@sveltejs/kit/hooks';
-import * as auth from '$lib/server/auth.js';
 import type { Handle } from '@sveltejs/kit';
 import { paraglideMiddleware } from '$lib/paraglide/server';
 
@@ -7,6 +7,7 @@ import { paraglideMiddleware } from '$lib/paraglide/server';
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
 		event.request = localizedRequest;
+
 		return resolve(event, {
 			transformPageChunk: ({ html }) => {
 				return html.replace('%lang%', locale);
@@ -16,6 +17,7 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const sessionToken = event.cookies.get(auth.sessionCookieName);
+
 	if (!sessionToken) {
 		event.locals.user = null;
 		event.locals.session = null;
@@ -23,6 +25,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	}
 
 	const { session, user } = await auth.validateSessionToken(sessionToken);
+
 	if (session) {
 		auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
 	} else {
@@ -31,7 +34,6 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 
 	event.locals.user = user;
 	event.locals.session = session;
-
 	return resolve(event);
 };
 

@@ -2,6 +2,9 @@
 	// import { buttonVariants } from '$lib/registry/new-york/ui/button/index.js';
 	// import { cn } from '$lib/utils.js';
 	import MainNav from './MainNav.svelte';
+	import Button from './ui/button/button.svelte';
+
+	const { user }: { user: { id: string; username: string } | null } = $props();
 </script>
 
 <header
@@ -15,6 +18,7 @@
 				<!-- <CommandMenu /> -->
 			</div>
 			<nav class="flex items-center">
+				<Button>Login</Button>
 				<!-- <ModeToggle /> -->
 			</nav>
 		</div>
