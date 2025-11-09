@@ -1,21 +1,17 @@
-import type { RequestHandler } from './$types';
+import { query } from '$app/server';
 import { spawn } from 'node:child_process';
-import { json } from '@sveltejs/kit';
 import { existsSync } from 'node:fs';
+import * as v from 'valibot';
 
-export const POST = (async ({ request }) => {
-	const vinumCode = await request.text();
+export const compileDoc = query(v.string(), async (vinumCode) => {
 	const VINUM_PATH = '/usr/local/bin/vinumc';
 
 	// Check if vinumc exists
 	if (!existsSync(VINUM_PATH)) {
-		return json(
-			{
-				compiled: '',
-				errors: `Error: vinumc not found at ${VINUM_PATH}. Please ensure it is properly installed.`
-			},
-			{ status: 500 }
-		);
+		return {
+			compiled: '',
+			errors: `Error: vinumc not found at ${VINUM_PATH}. Please ensure it is properly installed.`
+		};
 	}
 
 	const result = await new Promise<{ compiled: string; errors: string }>((resolve, reject) => {
@@ -57,5 +53,5 @@ export const POST = (async ({ request }) => {
 		}
 	});
 
-	return json(result);
-}) satisfies RequestHandler;
+	return result;
+});
