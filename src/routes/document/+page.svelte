@@ -126,8 +126,8 @@
 
 <style>
 	.pane-wrapper {
-		--editor-height: calc(100vh - 3.5rem);
-		--editor-height: calc(100dvh - 3.5rem);
+		--editor-height: calc(100vh - var(--sticky-header-height));
+		--editor-height: calc(100dvh - var(--sticky-header-height));
 		height: var(--editor-height);
 	}
 	iframe {
