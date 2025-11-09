@@ -39,8 +39,7 @@ WORKDIR /app
 # install only production deps
 COPY package.json pnpm-lock.yaml* .npmrc ./
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile \
- && pnpm store prune
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
 # copy built output from development-build
 COPY --from=development-build /app/build ./build
