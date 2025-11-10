@@ -111,7 +111,7 @@
 		<Resizable.Pane defaultSize={50} class="h-full">
 			<div bind:this={container}></div>
 		</Resizable.Pane>
-		<Resizable.Handle></Resizable.Handle>
+		<Resizable.Handle withHandle></Resizable.Handle>
 		<Resizable.Pane defaultSize={50} class="h-full">
 			<iframe
 				bind:this={previewContainer}
