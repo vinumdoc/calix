@@ -1,19 +1,5 @@
-import { pgTable, varchar, timestamp, uuid, text, boolean } from 'drizzle-orm/pg-core';
-
-export const user = pgTable('user', {
-	id: uuid('id').primaryKey(),
-	username: varchar().notNull().unique(),
-	email: varchar().notNull().unique(),
-	passwordHash: text('password_hash').notNull()
-});
-
-export const session = pgTable('session', {
-	id: uuid('id').primaryKey(),
-	userId: uuid('user_id')
-		.notNull()
-		.references(() => user.id),
-	expiresAt: timestamp('expires_at').notNull()
-});
+import { pgTable, text, boolean, uuid } from 'drizzle-orm/pg-core';
+import { session, user } from './auth_schema';
 
 export const vinumProject = pgTable('vinum_project', {
 	id: uuid('id').primaryKey(),
@@ -39,6 +25,8 @@ export const vinumProjectAccess = pgTable('vinum_project_access', {
 		.references(() => user.id),
 	allowWrite: boolean('allow_write').notNull()
 });
+
+export * from './auth_schema';
 
 export type Session = typeof session.$inferSelect;
 

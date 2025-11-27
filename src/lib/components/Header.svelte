@@ -1,10 +1,17 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
+	import { sessionDependencyUrl } from '$lib';
+	import { logout, queryUser } from '$lib/remotes/auth.remote';
 	// import { buttonVariants } from '$lib/registry/new-york/ui/button/index.js';
 	// import { cn } from '$lib/utils.js';
 	import MainNav from './MainNav.svelte';
 	import Button from './ui/button/button.svelte';
 
-	const { user }: { user: { id: string; username: string } | null } = $props();
+	let { user }: { user: { id: string; name: string } | undefined } = $props();
+	async function handleLogout() {
+		await logout();
+		await invalidate(sessionDependencyUrl);
+	}
 </script>
 
 <header
@@ -16,8 +23,14 @@
 		<div class="w-full flex-1 md:w-auto md:flex-none">
 			<!-- <CommandMenu /> -->
 		</div>
-		<nav class="flex items-center">
-			<Button>Login</Button>
+		<nav class="flex items-center pr-4">
+			{#if user}
+				<span class="mr-4 hidden md:inline">Hello, {user.name}!</span>
+				<Button variant="outline" onclick={handleLogout}>Logout</Button>
+			{:else}
+				<Button variant="outline" href="/auth/signup" class="mr-2">Sign Up</Button>
+				<Button href="/auth/login">Login</Button>
+			{/if}
 			<!-- <ModeToggle /> -->
 		</nav>
 	</div>
