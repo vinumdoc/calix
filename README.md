@@ -72,7 +72,7 @@ docker-compose --profile prod up --build -d
 ```
 
 - **db**: same Postgres service
-- **app-prod**: runs the production SvelteKit build on port 3000
+- **app-prod**: runs the production SvelteKit build on `HOST_PORT` (3000 by default)
 - `vinumc` is downloaded from its [Github releases page](https://github.com/vinumdoc/vinum/releases/) using the version specified in `VINUMC_VERSION`.
 
 To tear down both workflows:
