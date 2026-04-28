@@ -6,6 +6,7 @@
 
 :root {
 	--sticky-header-height: 4rem;
+	--editor-height: calc(100vh - var(--sticky-header-height));
 }
 
 :root {

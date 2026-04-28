@@ -11,7 +11,9 @@ export const vinumProject = pgTable('vinum_project', {
 
 export const vinumDocument = pgTable('vinum_document', {
 	id: uuid('id').primaryKey(),
-	projectId: uuid('project_id'),
+	projectId: uuid('project_id')
+		.notNull()
+		.references(() => vinumProject.id),
 	relativePath: text('relative_path').notNull(),
 	body: text('body').notNull()
 });
