@@ -3,6 +3,13 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import * as v from 'valibot';
 
+const template = `
+[list: <ul> $* </ul>]
+[item: <li> $* </li>]
+[paragraph: <p> $* </p>]
+[document: <html><body> $* </body></html>]
+`;
+
 export const compileDoc = query(v.string(), async (vinumCode) => {
 	const VINUM_PATH = '/usr/local/bin/vinumc';
 
@@ -34,7 +41,9 @@ export const compileDoc = query(v.string(), async (vinumCode) => {
 		// Handle stdin errors
 		child.stdin.on('error', (error) => {
 			console.error('Stdin error:', error);
-			reject(new Error(`Failed to write to vinumc stdin: ${error.message}`));
+			errors += JSON.stringify(error);
+			resolve({ compiled, errors });
+			// reject(new Error(`Failed to write to vinumc stdin: ${error.message}`));
 		});
 
 		child.on('close', (code) => {
@@ -45,11 +54,17 @@ export const compileDoc = query(v.string(), async (vinumCode) => {
 
 		// Write to stdin with error handling
 		try {
+			child.stdin.write(template);
 			child.stdin.write(vinumCode);
 			child.stdin.end();
 		} catch (error) {
-			console.error('Write error:', error);
-			reject(new Error(`Failed to write code to vinumc: ${error}`));
+			console.error('Write error:', error, errors);
+
+			// reject(
+			// 	new Error(`Failed to write code to vinumc: ${errors}`, {
+			// 		cause: error
+			// 	})
+			// );
 		}
 	});
 
