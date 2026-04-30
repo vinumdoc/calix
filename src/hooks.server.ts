@@ -36,3 +36,18 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 };
 
 export const handle: Handle = sequence(handleParaglide, handleAuth);
+
+export const handleError: HandleServerError = ({ error, event, status, message }) => {
+	const errorId = crypto.randomUUID();
+
+	console.log(`Error ID: ${errorId}`);
+	console.error(`Status: ${status}`);
+	console.error(`Message: ${message}`);
+	console.error(`Event: ${event.url.pathname}`);
+	console.error(error);
+
+	return {
+		message: `An unexpected error occurred. Please contact support with Error ID: ${errorId}`,
+		code: errorId
+	};
+};
