@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -24,7 +25,7 @@
 
 		if (register.result?.token) {
 			await invalidate(sessionDependencyUrl);
-			await goto('/');
+			await goto(`${base}/`);
 		}
 	}
 
@@ -90,7 +91,7 @@
 							Sign up with Google
 						</Button>
 						<FieldDescription class="px-6 text-center">
-							Already have an account? <a href="/auth/login">Sign in</a>
+							Already have an account? <a href="{base}/auth/login">Sign in</a>
 						</FieldDescription>
 					</Field>
 				</FieldGroup>

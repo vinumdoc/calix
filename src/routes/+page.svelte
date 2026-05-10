@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Cloud, Zap, Code2 } from '@lucide/svelte';
 </script>
@@ -16,8 +17,15 @@
 			your Vinum projects without the hassle of local setup.
 		</p>
 		<div class="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
-			<Button href="/login" size="lg" class="w-full font-semibold sm:w-auto">Get Started</Button>
-			<Button href="/about" variant="outline" size="lg" class="w-full font-semibold sm:w-auto">
+			<Button href="{base}/login" size="lg" class="w-full font-semibold sm:w-auto"
+				>Get Started</Button
+			>
+			<Button
+				href="{base}/about"
+				variant="outline"
+				size="lg"
+				class="w-full font-semibold sm:w-auto"
+			>
 				Learn More
 			</Button>
 		</div>

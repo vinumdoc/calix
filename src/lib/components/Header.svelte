@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { invalidate } from '$app/navigation';
 	import { sessionDependencyUrl } from '$lib';
 	import { logout, queryUser } from '$lib/remotes/auth.remote';
@@ -28,8 +29,8 @@
 				<span class="mr-4 hidden md:inline">Hello, {user.name}!</span>
 				<Button variant="outline" onclick={handleLogout}>Logout</Button>
 			{:else}
-				<Button variant="outline" href="/auth/signup" class="mr-2">Sign Up</Button>
-				<Button href="/auth/login">Login</Button>
+				<Button variant="outline" href="{base}/auth/signup" class="mr-2">Sign Up</Button>
+				<Button href="{base}/auth/login">Login</Button>
 			{/if}
 			<!-- <ModeToggle /> -->
 		</nav>

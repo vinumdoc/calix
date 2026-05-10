@@ -54,7 +54,7 @@ export const login = form(
 		// auth.setSessionTokenCookie(event, session.id, session.expiresAt);
 		// queryUser().set({ id: existingUser.id, username: existingUser.username });
 
-		// redirect(302, '/');
+		// redirect(302, `${base}/`);
 	}
 );
 

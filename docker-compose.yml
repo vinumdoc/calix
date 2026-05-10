@@ -9,7 +9,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      - '5434:5432'
     profiles:
       - dev
       - dev-local
@@ -22,11 +22,13 @@ services:
       args:
         VINUMC_SOURCE: release
         VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+        NODE_ENV: ${NODE_ENV:-production}
     image: calix-dev
     command: pnpm dev --host 0.0.0.0
     platform: linux/amd64
     volumes:
       - .:/app:cached
+      - /app/node_modules
     ports:
       - '5173:5173'
     environment:
@@ -45,11 +47,13 @@ services:
       args:
         VINUMC_SOURCE: local
         VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+        NODE_ENV: ${NODE_ENV:-production}
     image: calix-dev
     command: pnpm dev --host 0.0.0.0
     platform: linux/amd64
     volumes:
       - .:/app:cached
+      - /app/node_modules
       - '${VINUMC_PATH}:/usr/local/bin/vinumc:ro'
     ports:
       - '5173:5173'
@@ -75,6 +79,7 @@ services:
       target: production-build
       args:
         VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
+        NODE_ENV: ${NODE_ENV:-production}
     image: calix-prod
     env_file: .env
     depends_on:

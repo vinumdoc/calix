@@ -17,6 +17,9 @@ const config = {
 		},
 		csrf: {
 			trustedOrigins: ['*']
+		},
+		paths: {
+			base: process.env.NODE_ENV === 'production' ? '/vinum' : ''
 		}
 	},
 	compilerOptions: {

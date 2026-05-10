@@ -17,7 +17,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # Build-time environment variables (for build process)
 ARG DATABASE_URL="file:./local.db"
-ARG NODE_ENV="production"
+ARG NODE_ENV
+ENV NODE_ENV=${NODE_ENV:-production}
 
 ARG VINUMC_SOURCE=release
 ARG VINUMC_VERSION=vinumc-v0.1.0-alpha
@@ -48,7 +49,8 @@ COPY --from=development-build /app/package.json ./package.json
 
 # Build-time environment variables (for build process)
 ARG DATABASE_URL="file:./local.db"
-ARG NODE_ENV="production"
+ARG NODE_ENV
+ENV NODE_ENV=${NODE_ENV:-production}
 
 ARG VINUMC_VERSION=vinumc-v0.1.0-alpha
 RUN apt-get update && apt-get install -y curl && \

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import type { PageProps } from './$types';
 	import * as Card from '$lib/components/ui/card';
 	import * as Sheet from '$lib/components/ui/sheet';
@@ -79,7 +80,7 @@
 							</form>
 						{:else}
 							<a
-								href="/projects/{project.id}"
+								href="{base}/projects/{project.id}"
 								class="truncate decoration-primary/50 decoration-2 underline-offset-4 hover:underline"
 							>
 								{project.name}
