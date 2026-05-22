@@ -4,8 +4,11 @@ import { db } from './db';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import { env } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 
 export const auth = betterAuth({
+	baseURL: publicEnv.PUBLIC_BETTER_AUTH_BASE_URL,
+	basePath: publicEnv.PUBLIC_BETTER_AUTH_BASE_PATH,
 	database: drizzleAdapter(db, {
 		provider: 'pg'
 	}),
