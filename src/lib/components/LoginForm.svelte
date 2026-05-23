@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { base } from '$app/paths';
+	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -25,7 +25,7 @@
 		await submit();
 		if (login.result?.token) {
 			await invalidate(sessionDependencyUrl);
-			await goto(`${base}/`);
+			await goto(resolve('/'));
 		}
 	}
 

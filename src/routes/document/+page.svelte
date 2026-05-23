@@ -48,6 +48,7 @@
 		// TODO: put the document in a database
 		// or at least compress it before throwing it in the URL
 		url.searchParams.set('code', doc.toString());
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(url, {
 			keepFocus: true,
 			replaceState: true
