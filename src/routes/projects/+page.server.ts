@@ -1,5 +1,5 @@
 import { redirect, fail } from '@sveltejs/kit';
-import { base } from '$app/paths';
+import { resolve } from '$app/paths';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
 import { vinumDocument, vinumProject } from '$lib/server/db/schema';
@@ -7,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
-		redirect(302, `${base}/auth/login`);
+		redirect(302, resolve('/auth/login'));
 	}
 
 	const projects = await db
