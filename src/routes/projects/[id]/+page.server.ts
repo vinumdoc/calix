@@ -1,91 +1,67 @@
+import { error, redirect } from '@sveltejs/kit';
+import { resolve } from '$app/paths';
+import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { vinumProject, vinumDocument } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { error } from '@sveltejs/kit';
-import type { PageServerLoad, Actions } from './$types';
-import { compileDoc } from '$lib/remotes/compile.remote';
+import * as table from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 
-export const load: PageServerLoad = async ({ params }) => {
-	const projectId = params.id;
+export const load: PageServerLoad = async (event) => {
+	const projectId = event.params.id;
 
-	const [project] = await db.select().from(vinumProject).where(eq(vinumProject.id, projectId));
-	if (!project) error(404, 'Project not found');
+	const [project] = await db
+		.select()
+		.from(table.vinumProject)
+		.where(eq(table.vinumProject.id, projectId));
 
-	const documents = await db.select().from(vinumDocument).where(eq(vinumDocument.projectId, projectId));
+	if (!project) throw error(404, 'Project not found');
+
+	const collaborators = await db
+		.select({
+			id: table.vinumProjectAccess.id,
+			userId: table.user.id,
+			name: table.user.name,
+			email: table.user.email,
+			role: table.vinumProjectAccess.role
+		})
+		.from(table.vinumProjectAccess)
+		.innerJoin(table.user, eq(table.vinumProjectAccess.userId, table.user.id))
+		.where(eq(table.vinumProjectAccess.projectId, projectId));
+
+	const user = event.locals.user;
+	const isOwner = user?.id === project.ownerId;
+	const userAccess = user ? collaborators.find((c) => c.userId === user.id) : null;
+
+	// Permission check: If private, block non-owners/non-collaborators
+	if (!isOwner && project.publicAccessLevel === 'none' && !userAccess) {
+		throw error(403, 'Forbidden: This project is private.');
+	}
+
+	const files = await db
+		.select({
+			id: table.vinumDocument.id,
+			relativePath: table.vinumDocument.relativePath,
+			mimeType: table.vinumDocument.mimeType,
+			isBinary: table.vinumDocument.isBinary,
+			body: table.vinumDocument.body,
+			size: table.vinumDocument.size,
+			updatedAt: table.vinumDocument.updatedAt
+		})
+		.from(table.vinumDocument)
+		.where(eq(table.vinumDocument.projectId, projectId));
+
+	// Compute canEdit boolean
+	const canEdit =
+		isOwner ||
+		project.publicAccessLevel === 'edit' ||
+		userAccess?.role === 'edit' ||
+		userAccess?.role === 'admin';
 
 	return {
 		project,
-		documents
+		files,
+		collaborators,
+		isOwner,
+		canEdit,
+		user: event.locals.user
 	};
-};
-
-export const actions: Actions = {
-	compile: async ({ request }) => {
-		const formData = await request.formData();
-		const code = formData.get('code') as string;
-		if (!code) return { compiled: '', errors: 'No code provided' };
-		
-		return await compileDoc(code);
-	},
-	createFile: async ({ request, params }) => {
-		const formData = await request.formData();
-		const relativePath = formData.get('relativePath') as string;
-		const projectId = params.id;
-
-		if (!relativePath) return { success: false, error: 'File name is required' };
-
-		const [existing] = await db.select().from(vinumDocument).where(
-			and(
-				eq(vinumDocument.projectId, projectId),
-				eq(vinumDocument.relativePath, relativePath)
-			)
-		);
-
-		if (existing) return { success: false, error: 'File already exists' };
-
-		await db.insert(vinumDocument).values({
-			id: crypto.randomUUID(),
-			projectId: projectId,
-			relativePath: relativePath,
-			body: ''
-		});
-
-		return { success: true };
-	},
-	deleteFile: async ({ request, params }) => {
-		const formData = await request.formData();
-		const relativePath = formData.get('relativePath') as string;
-		const projectId = params.id;
-
-		if (!relativePath) return { success: false, error: 'File path is required' };
-
-		await db.delete(vinumDocument).where(
-			and(
-				eq(vinumDocument.projectId, projectId),
-				eq(vinumDocument.relativePath, relativePath)
-			)
-		);
-
-		return { success: true };
-	},
-	saveFile: async ({ request, params }) => {
-		const formData = await request.formData();
-		const relativePath = formData.get('relativePath') as string;
-		const content = formData.get('content') as string;
-		const projectId = params.id;
-
-		if (!relativePath) return { success: false, error: 'File path is required' };
-
-		await db
-			.update(vinumDocument)
-			.set({ body: content })
-			.where(
-				and(
-					eq(vinumDocument.projectId, projectId),
-					eq(vinumDocument.relativePath, relativePath)
-				)
-			);
-
-		return { success: true };
-	}
 };

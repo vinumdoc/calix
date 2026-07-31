@@ -108,3 +108,23 @@ export const logout = command(async () => {
 	// await auth.invalidateSession(session.id);
 	// auth.deleteSessionTokenCookie(event);
 });
+
+export const requestPasswordReset = command(v.pipe(v.string(), v.email()), async (email) => {
+	const event = getRequestEvent();
+	try {
+		await auth.api.requestPasswordReset({
+			body: {
+				email,
+				redirectTo: '/auth/reset-password'
+			},
+			headers: event.request.headers
+		});
+		return { success: true };
+	} catch (e) {
+		let message = 'Failed to request reset.';
+		if (e instanceof Error) {
+			message = e.message;
+		}
+		return { success: false, error: message };
+	}
+});

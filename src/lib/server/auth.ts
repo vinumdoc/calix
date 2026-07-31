@@ -13,12 +13,19 @@ export const auth = betterAuth({
 		provider: 'pg'
 	}),
 	emailAndPassword: {
-		enabled: true
+		enabled: true,
+		async sendResetPassword({ user, url, token }) {
+			console.log(`[Password Reset] Send link to ${user.email}: ${url}?token=${token}`);
+		}
 	},
 	socialProviders: {
 		google: {
-			clientId: env.GOOGLE_CLIENT_ID!,
-			clientSecret: env.GOOGLE_CLIENT_SECRET
+			clientId: env.GOOGLE_CLIENT_ID || '',
+			clientSecret: env.GOOGLE_CLIENT_SECRET || ''
+		},
+		github: {
+			clientId: env.GITHUB_CLIENT_ID || '',
+			clientSecret: env.GITHUB_CLIENT_SECRET || ''
 		}
 	},
 	advanced: {

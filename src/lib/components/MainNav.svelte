@@ -20,11 +20,37 @@
 				class={cn(
 					'transition-colors hover:text-foreground/80',
 					page.url.pathname.startsWith(resolve('/projects'))
-						? 'text-foreground'
+						? 'text-foreground font-semibold'
 						: 'text-foreground/60'
 				)}
 			>
 				Projects
+			</Nav.Link>
+		</Nav.Item>
+		<Nav.Item>
+			<Nav.Link
+				href={resolve('/docs/01-getting-started/01-introduction')}
+				class={cn(
+					'transition-colors hover:text-foreground/80',
+					page.url.pathname.startsWith(resolve('/docs'))
+						? 'text-foreground font-semibold'
+						: 'text-foreground/60'
+				)}
+			>
+				Docs
+			</Nav.Link>
+		</Nav.Item>
+		<Nav.Item>
+			<Nav.Link
+				href={resolve('/settings')}
+				class={cn(
+					'transition-colors hover:text-foreground/80',
+					page.url.pathname.startsWith(resolve('/settings'))
+						? 'text-foreground font-semibold'
+						: 'text-foreground/60'
+				)}
+			>
+				Settings
 			</Nav.Link>
 		</Nav.Item>
 	</Nav.List>

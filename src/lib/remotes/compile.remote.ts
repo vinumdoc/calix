@@ -4,10 +4,24 @@ import { existsSync } from 'node:fs';
 import * as v from 'valibot';
 
 const template = `
-[list: <ul> $* </ul>]
-[item: <li> $* </li>]
-[paragraph: <p> $* </p>]
+[doc: <html><body> $* </body></html>]
 [document: <html><body> $* </body></html>]
+[title: <h1> $* </h1>]
+[heading: <h2> $* </h2>]
+[subheading: <h3> $* </h3>]
+[paragraph: <p> $* </p>]
+[p: <p> $* </p>]
+[bold: <strong> $* </strong>]
+[b: <strong> $* </strong>]
+[italic: <em> $* </em>]
+[i: <em> $* </em>]
+[list: <ul> $* </ul>]
+[orderedlist: <ol> $* </ol>]
+[item: <li> $* </li>]
+[section: <section> $* </section>]
+[code: <code> $* </code>]
+[codeblock: <pre><code> $* </code></pre>]
+[quote: <blockquote> $* </blockquote>]
 `;
 
 export const compileDoc = query(v.string(), async (vinumCode) => {

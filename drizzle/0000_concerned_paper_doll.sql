@@ -1,20 +1,44 @@
 CREATE TABLE "vinum_document" (
-	"id" uuid PRIMARY KEY NOT NULL,
-	"project_id" uuid,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"project_id" uuid NOT NULL,
 	"relative_path" text NOT NULL,
-	"body" text NOT NULL
+	"mime_type" text DEFAULT 'text/plain' NOT NULL,
+	"is_binary" boolean DEFAULT false NOT NULL,
+	"body" text DEFAULT '' NOT NULL,
+	"binary_data" "bytea",
+	"size" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "vinum_project" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"owner_id" uuid NOT NULL,
-	"name" text NOT NULL
+	"name" text NOT NULL,
+	"description" text,
+	"entry_file_path" text DEFAULT 'main.vinum' NOT NULL,
+	"public_access_level" text DEFAULT 'none' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "vinum_project_access" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
-	"allow_write" boolean NOT NULL
+	"allow_write" boolean DEFAULT false NOT NULL,
+	"role" text DEFAULT 'read' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "vinum_share_link" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"project_id" uuid NOT NULL,
+	"token" text NOT NULL,
+	"role" text DEFAULT 'read' NOT NULL,
+	"expires_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "vinum_share_link_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
 CREATE TABLE "account" (
@@ -65,9 +89,11 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "vinum_project" ADD CONSTRAINT "vinum_project_owner_id_user_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "vinum_project_access" ADD CONSTRAINT "vinum_project_access_project_id_vinum_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."vinum_project"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "vinum_project_access" ADD CONSTRAINT "vinum_project_access_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vinum_document" ADD CONSTRAINT "vinum_document_project_id_vinum_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."vinum_project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vinum_project" ADD CONSTRAINT "vinum_project_owner_id_user_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vinum_project_access" ADD CONSTRAINT "vinum_project_access_project_id_vinum_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."vinum_project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vinum_project_access" ADD CONSTRAINT "vinum_project_access_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "vinum_share_link" ADD CONSTRAINT "vinum_share_link_project_id_vinum_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."vinum_project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
