@@ -17,6 +17,7 @@
 	import { goto } from '$app/navigation';
 	import { linter, setDiagnostics, type Diagnostic } from '@codemirror/lint';
 	import { onMount } from 'svelte';
+	import { enhance } from '$app/forms';
 
 	let { data }: PageProps = $props();
 	let container = $state<HTMLElement>();
@@ -63,6 +64,8 @@
 		};
 	}
 
+	let isPrinting = $state(false);
+
 	onMount(() => {
 		const vinumLang = LRLanguage.define({
 			parser,
@@ -108,6 +111,48 @@
 </svelte:head>
 
 <div class="pane-wrapper">
+
+	<div class="flex justify-between items-center px-4 py-2 bg-muted/40 border-b">
+		<span class="text-sm font-medium">Vinum Workspace</span>
+		<form method="POST" 
+				use:enhance={() => {
+						isPrinting = true;
+						return async ({ result, update }) => {
+								isPrinting = false;
+								
+								// Make sure result.data exists and has our base64 'pdf' field
+								if (result.type === 'success' && result.data?.pdf) {
+										// 1. Fetch the Base64 data URI to automatically convert it to a valid Blob
+										const res = await fetch(result.data.pdf as string);
+										const blob = await res.blob();
+										
+										// 2. Trigger the browser download
+										const url = window.URL.createObjectURL(blob);
+										const a = document.createElement('a');
+										a.href = url;
+										a.download = 'document.pdf';
+										document.body.appendChild(a);
+										a.click();
+										a.remove();
+										window.URL.revokeObjectURL(url);
+								}
+								
+								await update();
+						};
+				}}
+		>
+		<input type="hidden" name="html" value={data.compiled} />
+		<button 
+				type="submit" 
+				disabled={isPrinting}
+				class="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md shadow hover:bg-primary/90 disabled:opacity-50"
+		>
+				{isPrinting ? 'Generating PDF...' : 'Download PDF'}
+		</button>
+		</form>
+	</div>
+
+
 	<Resizable.PaneGroup direction="horizontal" autoSaveId="document-editor-panes">
 		<Resizable.Pane defaultSize={50} class="h-full">
 			<div bind:this={container}></div>
