@@ -1,11 +1,21 @@
-@precedence { textPrec @left }
 @top File { statement* }
 
 @skip { space }
 
 
 statement {
-  String | Text | DryDefinition | DryGlobalDefinition | DryCall | DryComment | SweetCall | GroupSweetCall | ChildrenShot
+  String |
+  Text |
+  DryDefinition |
+  DryGlobalDefinition |
+  DryCall |
+  DryComment |
+  SweetCall |
+  GroupSweetCall |
+  ChildrenShot |
+  "(" ~sweetParen |
+  ")" |
+  "."
 }
 
 Body {
@@ -16,12 +26,9 @@ ChildrenShot {
   "$*"
 }
 
-Text {
-  textChar+ !textPrec
-}
 
 DryDefinition {
-  "[" Identifier? ":" Body "]"
+  "[" Identifier? DeclMarker Body "]"
 }
 
 DryCall {
@@ -29,7 +36,7 @@ DryCall {
 }
 
 DryGlobalDefinition {
-  "[" Identifier "::" Body "]"
+  "[" Identifier GlobalDeclMarker Body "]"
 }
 
 DryComment {
@@ -41,7 +48,7 @@ SweetCall {
 }
 
 GroupSweetCall {
-  "(" Body ")." Identifier
+  "(" ~sweetParen Body ")." Identifier
 }
 
 @skip {} {
@@ -55,6 +62,8 @@ GroupSweetCall {
   @else stringContent
 }
 
+@external tokens textTokenizer from "./tokens" { Text, DeclMarker, GlobalDeclMarker }
+
 @tokens {
   commentContent { ![\]] }
   textChar { ![\n] }
@@ -67,10 +76,10 @@ GroupSweetCall {
     "(",
     ".",
     "[",
-    "]",
-    ":",
-    textChar
+    "]"
   }
+
+  "[" "]" "(" ")" ")." "#"
 }
 
 @external propSource highlighting from "./highlight.js"
