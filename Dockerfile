@@ -85,6 +85,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-l
 COPY --from=development-build /app/build ./build
 # copy adapter entrypoint (SvelteKit adapter-node output)
 COPY --from=development-build /app/package.json ./package.json
+# copy drizzle migrations
+COPY --from=development-build /app/drizzle ./drizzle
 
 # Build-time environment variables (for build process)
 ARG DATABASE_URL="file:./local.db"
