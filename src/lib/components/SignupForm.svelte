@@ -31,13 +31,15 @@
 
 	async function loginWithGoogle() {
 		await authClient.signIn.social({
-			provider: 'google'
+			provider: 'google',
+			callbackURL: resolve('/projects')
 		});
 	}
 
 	async function loginWithGithub() {
 		await authClient.signIn.social({
-			provider: 'github'
+			provider: 'github',
+			callbackURL: resolve('/projects')
 		});
 	}
 </script>
@@ -85,7 +87,9 @@
 				</Field>
 				<FieldGroup>
 					<Field>
-						<Button class="w-full" {...register.buttonProps.enhance(enhancer)}>Create Account</Button>
+						<Button class="w-full" {...register.buttonProps.enhance(enhancer)}
+							>Create Account</Button
+						>
 						<div class="grid grid-cols-2 gap-2">
 							<Button variant="outline" type="button" class="w-full" onclick={loginWithGoogle}>
 								<svg class="mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

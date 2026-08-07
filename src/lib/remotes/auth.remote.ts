@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import { auth } from '$lib/server/auth';
 import { APIError } from 'better-auth';
+import { resolve } from '$app/paths';
 
 export const queryUser = query(() => {
 	const event = getRequestEvent();
@@ -31,7 +32,8 @@ export const login = form(
 		const data = await auth.api.signInEmail({
 			body: {
 				email,
-				password
+				password,
+				callbackURL: resolve('/projects')
 			},
 			headers: event.request.headers
 		});

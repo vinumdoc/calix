@@ -31,13 +31,15 @@
 
 	async function loginWithGoogle() {
 		await authClient.signIn.social({
-			provider: 'google'
+			provider: 'google',
+			callbackURL: resolve('/projects')
 		});
 	}
 
 	async function loginWithGithub() {
 		await authClient.signIn.social({
-			provider: 'github'
+			provider: 'github',
+			callbackURL: resolve('/projects')
 		});
 	}
 </script>
@@ -61,7 +63,12 @@
 				<Field>
 					<div class="flex items-center">
 						<FieldLabel for="password-{id}">Password</FieldLabel>
-						<a href={resolve('/auth/forgot-password')} class="ml-auto inline-block text-sm underline"> Forgot your password? </a>
+						<a
+							href={resolve('/auth/forgot-password')}
+							class="ml-auto inline-block text-sm underline"
+						>
+							Forgot your password?
+						</a>
 					</div>
 					<Input id="password-{id}" required {...password.as('password')} />
 					{#each password.issues() as issue (issue.message)}
