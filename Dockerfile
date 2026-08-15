@@ -1,5 +1,5 @@
 # ---- Base Stage ----
-# Sets up Node, pnpm, and copies package manifests.
+# Sets up No, pnpm, and copies package manifests.
 FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -68,6 +68,37 @@ RUN if [ "$VINUMC_SOURCE" = "release" ]; then \
       chmod +x /usr/local/bin/vinumc; \
     fi
 
+
+RUN pnpm build
+
+FROM base AS rolling-build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    meson \
+    ninja-build \
+    build-essential \
+    bison \
+    flex \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/vinumdoc/vinum.git /tmp/vinum-src && \
+    cd /tmp/vinum-src && \
+    meson setup builddir -Dprefer_static=true -Ddefault_library=static && \
+    meson compile -C builddir && \
+    cp /tmp/vinum-src/builddir/subprojects/vinumc/vinumc /usr/local/bin/vinumc && \
+    chmod +x /usr/local/bin/vinumc && \
+    rm -rf /tmp/vinum-src
+
+WORKDIR /app
+
+COPY . /app
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+ARG DATABASE_URL="file:./local.db"
+ARG NODE_ENV
+ENV NODE_ENV=${NODE_ENV:-production}
 
 RUN pnpm build
 
