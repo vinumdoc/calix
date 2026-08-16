@@ -37,7 +37,7 @@
 						: 'text-foreground/60'
 				)}
 			>
-				Docs
+				Documentation
 			</Nav.Link>
 		</Nav.Item>
 		<Nav.Item>
