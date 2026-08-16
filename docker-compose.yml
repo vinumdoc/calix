@@ -13,6 +13,7 @@ services:
     profiles:
       - dev
       - dev-local
+      - dev-rolling
       - prod
 
   app-release:
@@ -41,6 +42,30 @@ services:
       - yjs-ws
     profiles:
       - dev-release
+
+  app-rolling:
+    build:
+      context: .
+      target: rolling-build
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
+    image: calix-rolling
+    command: pnpm dev --host 0.0.0.0
+    platform: linux/amd64
+    volumes:
+      - .:/app:cached
+      - /app/node_modules
+    ports:
+      - '5173:5173'
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      VINUMC_SOURCE: rolling
+      PUBLIC_YJS_WS_URL: ${PUBLIC_YJS_WS_URL:-ws://localhost:1234}
+    depends_on:
+      - db
+      - yjs-ws
+    profiles:
+      - dev-rolling
 
   app-local:
     build:
@@ -110,6 +135,7 @@ services:
       - dev
       - dev-release
       - dev-local
+      - dev-rolling
       - prod
 
 volumes:
