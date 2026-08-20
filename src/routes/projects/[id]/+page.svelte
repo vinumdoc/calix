@@ -25,6 +25,7 @@
 		Code,
 		Play,
 		CheckCircle2,
+		MoreVertical,
 		Copy
 	} from '@lucide/svelte';
 
@@ -46,6 +47,12 @@
 	let activeTab = $state<'split' | 'code' | 'preview'>('split');
 
 	let editorRef = $state<CodeMirrorEditor | null>(null);
+
+	let openMenuId = $state<string | null>(null);
+
+	function closeMenu() {
+    openMenuId = null;
+	}
 
 	function selectFile(path: string) {
 		activeFilePath = path;
@@ -184,6 +191,8 @@
 	}
 </script>
 
+<svelte:window onclick={closeMenu} />
+
 <div class="flex h-[calc(100vh-4rem)] flex-col bg-background">
 	<!-- IDE Toolbar -->
 	<header class="flex h-14 items-center justify-between border-b bg-muted/40 px-4">
@@ -297,23 +306,38 @@
 								<span class="truncate">{file.relativePath}</span>
 							</div>
 							{#if file.relativePath !== 'main.vinum'}
-								<span
-									role="button"
-									tabindex="0"
-									class="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
-									onclick={(e) => {
-										e.stopPropagation();
-										handleDeleteFile(file.relativePath);
-									}}
-									onkeydown={(e) => {
-										if (e.key === 'Enter') {
-											e.stopPropagation();
-											handleDeleteFile(file.relativePath);
-										}
-									}}
-								>
-									<Trash2 class="h-3.5 w-3.5" />
-								</span>
+						    <div class="relative flex items-center">
+					        <!-- 3-Dot Trigger Button -->
+					        <button
+					            class="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
+					            onclick={(e) => {
+					                e.stopPropagation();
+					                openMenuId = openMenuId === file.id ? null : file.id; 
+					            }}
+					            title="Options"
+					        >
+					            <MoreVertical class="h-4 w-4" />
+					        </button>
+
+					        <!-- Dropdown Menu -->
+					        {#if openMenuId === file.id}
+					            <div 
+					                class="absolute right-0 top-full z-50 mt-1 flex w-28 flex-col overflow-hidden rounded-md border bg-background shadow-md"
+					            >
+					                <button
+					                    class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-muted"
+					                    onclick={(e) => {
+					                        e.stopPropagation();
+					                        handleDeleteFile(file.relativePath);
+					                        openMenuId = null;
+					                    }}
+					                >
+					                    <Trash2 class="h-3.5 w-3.5" />
+					                    Delete
+					                </button>
+					            </div>
+					        {/if}
+						    </div>
 							{/if}
 						</button>
 					{/each}
