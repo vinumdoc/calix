@@ -6,6 +6,7 @@
 		getProjectWithFiles,
 		saveFileContent,
 		deleteFile,
+		renameFile,
 		updatePublicAccessLevel,
 		inviteCollaborator,
 		removeCollaborator
@@ -26,6 +27,7 @@
 		Play,
 		CheckCircle2,
 		MoreVertical,
+		Edit,
 		Copy
 	} from '@lucide/svelte';
 
@@ -49,6 +51,10 @@
 	let editorRef = $state<CodeMirrorEditor | null>(null);
 
 	let openMenuId = $state<string | null>(null);
+
+	let showRenameModal = $state(false);
+	let fileToRename = $state('');
+	let renameInput = $state('');
 
 	function closeMenu() {
     openMenuId = null;
@@ -115,6 +121,38 @@
 			await deleteFile({ projectId: data.project.id, relativePath: path });
 			activeFilePath = 'main.vinum';
 		}
+	}
+
+	async function submitRename(e: Event) {
+    e.preventDefault();
+    if (!renameInput.trim() || !fileToRename) return;
+
+    const newPath = renameInput.trim().endsWith('.vinum')
+        ? renameInput.trim()
+        : `${renameInput.trim()}.vinum`;
+
+    if (newPath === fileToRename) {
+        showRenameModal = false;
+        return;
+    }
+
+    const res = await renameFile({
+        projectId: data.project.id,
+        oldPath: fileToRename,
+        newPath: newPath
+    });
+
+    if (res.success) {
+        await invalidateAll();
+        
+        if (activeFilePath === fileToRename) {
+            activeFilePath = newPath;
+        }
+        
+        showRenameModal = false;
+        fileToRename = '';
+        renameInput = '';
+    }
 	}
 
 	function downloadSingleFile(file: any) {
@@ -351,6 +389,21 @@
 									            Download
 									        </button>
 
+									        <!-- Rename Button -->
+													<button
+													    class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+													    onclick={(e) => {
+													        e.stopPropagation();
+													        fileToRename = file.relativePath;
+													        renameInput = file.relativePath;
+													        showRenameModal = true;
+													        openMenuId = null;
+													    }}
+													>
+													    <Edit class="h-3.5 w-3.5" />
+													    Rename
+													</button>
+
 									        <div class="h-px w-full bg-border"></div>
 
 						            	<!-- Delete Button -->
@@ -452,6 +505,24 @@
 				</form>
 			</div>
 		</div>
+	{/if}
+
+	<!-- Rename File Modal -->
+	{#if showRenameModal}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="w-full max-w-sm space-y-4 rounded-xl border bg-background p-6 shadow-xl">
+        <h3 class="text-lg font-bold">Rename File</h3>
+        <form onsubmit={submitRename} class="space-y-4">
+          <Input placeholder="e.g. new_name.vinum" bind:value={renameInput} required />
+          <div class="flex justify-end gap-2">
+            <Button type="button" variant="outline" onclick={() => (showRenameModal = false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Rename</Button>
+          </div>
+        </form>
+      </div>
+    </div>
 	{/if}
 
 	<!-- Share Project Modal -->
