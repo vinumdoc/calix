@@ -33,7 +33,7 @@
 
 	let { data } = $props();
 
-	let files = $state(data.files || []);
+	let files = $derived(data.files || []);
 	let activeFilePath = $state('main.vinum');
 	let activeContent = $state('');
 	let compiledHtml = $state('');
@@ -110,6 +110,8 @@
 		newFileName = '';
 		showNewFileModal = false;
 		activeFilePath = path;
+
+		await invalidateAll();
 	}
 
 	async function handleDeleteFile(path: string) {
@@ -121,6 +123,8 @@
 			await deleteFile({ projectId: data.project.id, relativePath: path });
 			activeFilePath = 'main.vinum';
 		}
+
+		await invalidateAll();
 	}
 
 	async function submitRename(e: Event) {
@@ -143,8 +147,6 @@
     });
 
     if (res.success) {
-        await invalidateAll();
-        
         if (activeFilePath === fileToRename) {
             activeFilePath = newPath;
         }
@@ -153,6 +155,7 @@
         fileToRename = '';
         renameInput = '';
     }
+    await invalidateAll();
 	}
 
 	function downloadSingleFile(file: any) {
