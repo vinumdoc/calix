@@ -117,6 +117,20 @@
 		}
 	}
 
+	function downloadSingleFile(file: any) {
+    const blob = new Blob([file.body], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.relativePath;
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+	}
+
 	async function handleAssetUpload(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const file = target.files?.[0];
@@ -324,6 +338,22 @@
 					            <div 
 					                class="absolute right-0 top-full z-50 mt-1 flex w-28 flex-col overflow-hidden rounded-md border bg-background shadow-md"
 					            >
+						            	<!-- Download Button -->
+									        <button
+									            class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+									            onclick={(e) => {
+									                e.stopPropagation();
+									                downloadSingleFile(file);
+									                openMenuId = null;
+									            }}
+									        >
+									            <Download class="h-3.5 w-3.5" />
+									            Download
+									        </button>
+
+									        <div class="h-px w-full bg-border"></div>
+
+						            	<!-- Delete Button -->
 					                <button
 					                    class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-muted"
 					                    onclick={(e) => {
