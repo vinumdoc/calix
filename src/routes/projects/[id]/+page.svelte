@@ -79,11 +79,10 @@
 	function handleCodeChange(newCode: string) {
 		activeContent = newCode;
 		
-		const currentFile = files.find((f) => f.relativePath === activeFilePath);
-    if (currentFile) {
-        currentFile.body = newCode;
-    }
-    
+		const file = files.find((f) => f.relativePath === activeFilePath);
+		if (file && !file.isBinary) {
+			file.body = activeContent;
+		}
 		triggerDebouncedCompile();
 	}
 
