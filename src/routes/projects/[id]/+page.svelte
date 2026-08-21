@@ -479,7 +479,7 @@
 				<span>{activeFilePath}</span>
 				<span class="text-muted-foreground">{activeContent.length} chars</span>
 			</div>
-			<div class="flex-1 p-2">
+			<div class="flex-1 overflow-y-auto p-2">
 				<CodeMirrorEditor
 					bind:this={editorRef}
 					initialValue={activeContent}
