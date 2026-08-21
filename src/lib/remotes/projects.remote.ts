@@ -183,6 +183,31 @@ export const deleteFile = command(
 	}
 );
 
+export const renameFile = command(
+    v.object({
+        projectId: v.string(),
+        oldPath: v.string(),
+        newPath: v.string()
+    }),
+    async ({ projectId, oldPath, newPath }) => {
+        const event = getRequestEvent();
+        const user = event.locals.user;
+        if (!user) throw error(401, 'Unauthorized');
+
+        await db
+            .update(table.vinumDocument)
+            .set({ relativePath: newPath })
+            .where(
+                and(
+                    eq(table.vinumDocument.projectId, projectId),
+                    eq(table.vinumDocument.relativePath, oldPath)
+                )
+            );
+
+        return { success: true, newPath };
+    }
+);
+
 export const deleteProject = command(v.string(), async (projectId) => {
 	const event = getRequestEvent();
 	const user = event.locals.user;

@@ -6,6 +6,7 @@
 		getProjectWithFiles,
 		saveFileContent,
 		deleteFile,
+		renameFile,
 		updatePublicAccessLevel,
 		inviteCollaborator,
 		removeCollaborator
@@ -25,12 +26,18 @@
 		Code,
 		Play,
 		CheckCircle2,
-		Copy
+		MoreVertical,
+		Edit,
+		Copy,
+		FolderOutput
 	} from '@lucide/svelte';
 
 	let { data } = $props();
 
-	let files = $state(data.files || []);
+	let files = $derived(data.files || []);
+	let sourceFiles = $derived(files.filter(f => !f.relativePath.startsWith('cocktail/')));
+	let cocktailFiles = $derived(files.filter(f => f.relativePath.startsWith('cocktail/')));
+	
 	let activeFilePath = $state('main.vinum');
 	let activeContent = $state('');
 	let compiledHtml = $state('');
@@ -46,6 +53,16 @@
 	let activeTab = $state<'split' | 'code' | 'preview'>('split');
 
 	let editorRef = $state<CodeMirrorEditor | null>(null);
+
+	let openMenuId = $state<string | null>(null);
+
+	let showRenameModal = $state(false);
+	let fileToRename = $state('');
+	let renameInput = $state('');
+
+	function closeMenu() {
+    openMenuId = null;
+	}
 
 	function selectFile(path: string) {
 		activeFilePath = path;
@@ -97,6 +114,8 @@
 		newFileName = '';
 		showNewFileModal = false;
 		activeFilePath = path;
+
+		await invalidateAll();
 	}
 
 	async function handleDeleteFile(path: string) {
@@ -108,6 +127,79 @@
 			await deleteFile({ projectId: data.project.id, relativePath: path });
 			activeFilePath = 'main.vinum';
 		}
+
+		await invalidateAll();
+	}
+
+	async function submitRename(e: Event) {
+    e.preventDefault();
+    if (!renameInput.trim() || !fileToRename) return;
+
+    const formattedName = renameInput.trim().endsWith('.vinum')
+        ? renameInput.trim()
+        : `${renameInput.trim()}.vinum`;
+
+	  const isCocktail = fileToRename.startsWith('cocktail/');
+	  const newPath = isCocktail ? `cocktail/${formattedName}` : formattedName;
+
+    if (newPath === fileToRename) {
+        showRenameModal = false;
+        return;
+    }
+
+    const res = await renameFile({
+        projectId: data.project.id,
+        oldPath: fileToRename,
+        newPath: newPath
+    });
+
+    if (res.success) {
+        if (activeFilePath === fileToRename) {
+            activeFilePath = newPath;
+        }
+        
+        showRenameModal = false;
+        fileToRename = '';
+        renameInput = '';
+    }
+    await invalidateAll();
+	}
+
+	async function toggleCocktailStatus(file: any) {
+    const isCocktail = file.relativePath.startsWith('cocktail/');
+    const oldPath = file.relativePath;
+    
+    const newPath = isCocktail
+        ? oldPath.replace('cocktail/', '')
+        : `cocktail/${oldPath}`;
+
+    const res = await renameFile({
+        projectId: data.project.id,
+        oldPath,
+        newPath
+    });
+
+    if (res.success) {
+        await invalidateAll();
+        if (activeFilePath === oldPath) {
+            activeFilePath = newPath;
+        }
+        openMenuId = null;
+    }
+	}
+
+	function downloadSingleFile(file: any) {
+    const blob = new Blob([file.body], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.relativePath;
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 	}
 
 	async function handleAssetUpload(e: Event) {
@@ -184,7 +276,88 @@
 	}
 </script>
 
+<svelte:window onclick={closeMenu} />
+
 <div class="flex h-[calc(100vh-4rem)] flex-col bg-background">
+	{#snippet fileItem(file)}
+    <button
+        type="button"
+        class="group flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors {activeFilePath ===
+        file.relativePath
+            ? 'bg-primary/10 font-semibold text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+        onclick={() => {
+            if (!file.isBinary) selectFile(file.relativePath);
+        }}
+    >
+        <div class="flex items-center gap-2 truncate">
+            {#if file.isBinary}
+                <ImageIcon class="h-3.5 w-3.5 shrink-0 text-blue-500" />
+            {:else}
+                <FileCode class="h-3.5 w-3.5 shrink-0 text-amber-500" />
+            {/if}
+            <span class="truncate">{file.relativePath.replace('cocktail/', '')}</span>
+        </div>
+        {#if file.relativePath !== 'main.vinum'}
+            <div class="relative flex items-center">
+                <button
+                    class="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
+                    onclick={(e) => {
+                        e.stopPropagation();
+                        openMenuId = openMenuId === file.id ? null : file.id; 
+                    }}
+                    title="Options"
+                >
+                    <MoreVertical class="h-4 w-4" />
+                </button>
+
+                {#if openMenuId === file.id}
+                    <div class="absolute right-0 top-full z-50 mt-1 flex w-36 flex-col overflow-hidden rounded-md border bg-background shadow-md">
+                        <!-- Move to Source/Cocktail -->
+                        <button
+                            class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                            onclick={(e) => {
+                                e.stopPropagation();
+                                toggleCocktailStatus(file);
+                            }}
+                        >
+                            <FolderOutput class="h-3.5 w-3.5" />
+                            {file.relativePath.startsWith('cocktail/') ? 'Move to Source' : 'Move to Cocktail'}
+                        </button>
+                        
+                        <!-- Rename -->
+                        <button
+                            class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                            onclick={(e) => {
+                                e.stopPropagation();
+                                fileToRename = file.relativePath;
+                                renameInput = file.relativePath.replace('cocktail/', '');
+                                showRenameModal = true;
+                                openMenuId = null; 
+                            }}
+                        >
+                            <Edit class="h-3.5 w-3.5" />
+                            Rename
+                        </button>
+
+                        <button class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted" onclick={(e) => { e.stopPropagation(); downloadSingleFile(file); openMenuId = null; }}>
+                            <Download class="h-3.5 w-3.5" />
+                            Download
+                        </button>
+
+                        <div class="h-px w-full bg-border"></div>
+
+                        <button class="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-destructive hover:bg-muted" onclick={(e) => { e.stopPropagation(); handleDeleteFile(file.relativePath); openMenuId = null; }}>
+                            <Trash2 class="h-3.5 w-3.5" />
+                            Delete
+                        </button>
+                    </div>
+                {/if}
+            </div>
+        {/if}
+    </button>
+	{/snippet}
+
 	<!-- IDE Toolbar -->
 	<header class="flex h-14 items-center justify-between border-b bg-muted/40 px-4">
 		<div class="flex items-center gap-3">
@@ -245,86 +418,54 @@
 	<!-- Main Workspace Split Pane -->
 	<div class="flex flex-1 overflow-hidden">
 		<!-- Sidebar: File Tree & Assets -->
-		<aside class="flex hidden w-64 flex-col justify-between border-r bg-muted/20 p-3 md:flex">
-			<div class="space-y-4">
-				<div class="flex items-center justify-between">
-					<span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-						>Files</span
-					>
-					<div class="flex gap-1">
-						<button
-							class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-							title="New File"
-							onclick={() => (showNewFileModal = true)}
-						>
-							<Plus class="h-4 w-4" />
-						</button>
-						<button
-							class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-							title="Upload Asset"
-							onclick={() => uploadFileInput?.click()}
-						>
-							<Upload class="h-4 w-4" />
-						</button>
-						<input
-							type="file"
-							bind:this={uploadFileInput}
-							class="hidden"
-							onchange={handleAssetUpload}
-						/>
-					</div>
-				</div>
+		<aside class="hidden w-64 flex-col border-r bg-muted/20 md:flex h-full overflow-hidden">
+	    <div class="flex flex-col flex-1 overflow-hidden">
+        <!-- Source Files -->
+        <div class="flex flex-col flex-1 overflow-hidden p-3">
+          <div class="flex items-center justify-between mb-3 shrink-0">
+            <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Source Files</span>
+            <div class="flex gap-1">
+	            <button class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" onclick={() => (showNewFileModal = true)}>
+	              <Plus class="h-4 w-4" />
+              </button>
+              <button class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" onclick={() => uploadFileInput?.click()}>
+                <Upload class="h-4 w-4" />
+              </button>
+              <input type="file" bind:this={uploadFileInput} class="hidden" onchange={handleAssetUpload} />
+            </div>
+          </div>
+            
+          <nav class="flex-1 space-y-1 overflow-y-auto pr-1">
+              {#each sourceFiles as file (file.id)}
+                  {@render fileItem(file)}
+              {/each}
+          </nav>
+        </div>
 
-				<!-- File List -->
-				<nav class="space-y-1">
-					{#each files as file (file.id)}
-						<button
-							type="button"
-							class="group flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors {activeFilePath ===
-							file.relativePath
-								? 'bg-primary/10 font-semibold text-primary'
-								: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
-							onclick={() => {
-								if (!file.isBinary) selectFile(file.relativePath);
-							}}
-						>
-							<div class="flex items-center gap-2 truncate">
-								{#if file.isBinary}
-									<ImageIcon class="h-3.5 w-3.5 shrink-0 text-blue-500" />
-								{:else}
-									<FileCode class="h-3.5 w-3.5 shrink-0 text-amber-500" />
-								{/if}
-								<span class="truncate">{file.relativePath}</span>
-							</div>
-							{#if file.relativePath !== 'main.vinum'}
-								<span
-									role="button"
-									tabindex="0"
-									class="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive"
-									onclick={(e) => {
-										e.stopPropagation();
-										handleDeleteFile(file.relativePath);
-									}}
-									onkeydown={(e) => {
-										if (e.key === 'Enter') {
-											e.stopPropagation();
-											handleDeleteFile(file.relativePath);
-										}
-									}}
-								>
-									<Trash2 class="h-3.5 w-3.5" />
-								</span>
-							{/if}
-						</button>
-					{/each}
-				</nav>
-			</div>
+        <!-- Cocktail Files -->
+        {#if cocktailFiles.length > 0}
+          <div class="flex flex-col flex-1 overflow-hidden p-3 border-t bg-muted/10">
+	          <div class="flex items-center justify-between mb-3 shrink-0">
+              <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Cocktail Files</span>
+            </div>
+                
+            <nav class="flex-1 space-y-1 overflow-y-auto pr-1">
+                {#each cocktailFiles as file (file.id)}
+                    {@render fileItem(file)}
+                {/each}
+            </nav>
+          </div>
+        {/if}
+    </div>
 
-			<div class="space-y-1 rounded-lg border bg-card p-3 text-xs text-muted-foreground">
-				<p class="font-semibold text-foreground">Entry Document</p>
-				<p class="truncate">{data.project?.entryFilePath}</p>
-			</div>
-		</aside>
+    <!-- Entry Document -->
+    <div class="shrink-0 border-t p-3">
+      <div class="space-y-1 rounded-lg border bg-card p-3 text-xs text-muted-foreground">
+        <p class="font-semibold text-foreground">Entry Document</p>
+        <p class="truncate">{data.project?.entryFilePath}</p>
+      </div>
+    </div>
+	</aside>
 
 		<!-- Center Code Editor Pane -->
 		<div
@@ -398,6 +539,24 @@
 				</form>
 			</div>
 		</div>
+	{/if}
+
+	<!-- Rename File Modal -->
+	{#if showRenameModal}
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div class="w-full max-w-sm space-y-4 rounded-xl border bg-background p-6 shadow-xl">
+        <h3 class="text-lg font-bold">Rename File</h3>
+        <form onsubmit={submitRename} class="space-y-4">
+          <Input placeholder="e.g. new_name.vinum" bind:value={renameInput} required />
+          <div class="flex justify-end gap-2">
+            <Button type="button" variant="outline" onclick={() => (showRenameModal = false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Rename</Button>
+          </div>
+        </form>
+      </div>
+    </div>
 	{/if}
 
 	<!-- Share Project Modal -->
