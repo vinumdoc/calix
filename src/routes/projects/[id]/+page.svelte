@@ -365,10 +365,17 @@
 			<div class="relative flex-1 overflow-hidden bg-white">
 				{#if compileErrors}
 					<div
-						class="absolute top-2 right-2 left-2 z-10 rounded-lg border border-destructive/50 bg-destructive/90 p-4 font-mono text-xs text-white shadow-lg backdrop-blur"
+							class="absolute bottom-4 right-4 z-20 max-w-md rounded-xl border border-zinc-400/40 dark:border-zinc-700 bg-popover p-4"
 					>
-						<p class="mb-1 font-bold">Compiler Error:</p>
-						<pre class="whitespace-pre-wrap">{compileErrors}</pre>
+						<div class="flex items-center justify-between pb-2 mb-2 border-b border-border">
+							<span class="font-semibold text-xs text-destructive flex items-center gap-2">
+								<span class="h-2 w-2 rounded-full bg-destructive"></span>
+								Compilation Error
+							</span>
+						</div>
+						<div class="rounded-lg bg-muted/60 p-2.5 border border-border/50">
+							<pre class="whitespace-pre-wrap max-h-32 overflow-y-auto font-mono text-xs text-foreground">{compileErrors}</pre>
+						</div>
 					</div>
 				{/if}
 
