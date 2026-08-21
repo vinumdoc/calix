@@ -22,13 +22,13 @@ export const vinumProject = pgTable('vinum_project', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
 	description: text('description'),
-	entryFilePath: text('entry_file_path').notNull().default('main.vinum'),
+	entryFilePath: text('entry_file_path').notNull().default('main.vin'),
 	publicAccessLevel: text('public_access_level', { enum: ['none', 'read', 'edit'] }).notNull().default('none'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-// Project Files Table (Stores both text .vinum files and binary image assets in Postgres)
+// Project Files Table (Stores both text .vin files and binary image assets in Postgres)
 export const vinumDocument = pgTable('vinum_document', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	projectId: uuid('project_id')

@@ -48,7 +48,7 @@ export const createProject = command(
 			})
 			.returning();
 
-		// Create default entry main.vinum file
+		// Create default entry main.vin file
 		const defaultCode = `[doc [paragraph Hello World]]`;
 
 		await db.insert(table.vinumDocument).values({

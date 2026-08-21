@@ -16,7 +16,7 @@ CREATE TABLE "vinum_project" (
 	"owner_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
-	"entry_file_path" text DEFAULT 'main.vinum' NOT NULL,
+	"entry_file_path" text DEFAULT 'main.vin' NOT NULL,
 	"public_access_level" text DEFAULT 'none' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
