@@ -70,23 +70,34 @@
 		if (file && !file.isBinary) {
 			activeContent = file.body;
 			editorRef?.setValue(file.body);
-			triggerDebouncedCompile(file.body);
+			triggerDebouncedCompile();
 		}
 	}
 
 	function handleCodeChange(newCode: string) {
 		activeContent = newCode;
-		triggerDebouncedCompile(newCode);
+		
+		const currentFile = files.find((f) => f.relativePath === activeFilePath);
+    if (currentFile) {
+        currentFile.body = newCode;
+    }
+    
+		triggerDebouncedCompile();
 	}
 
-	function triggerDebouncedCompile(code: string) {
+	function triggerDebouncedCompile() {
 		if (debounceTimer) clearTimeout(debounceTimer);
 		isCompiling = true;
 
 		debounceTimer = setTimeout(async () => {
 			try {
-				console.log(code);
-				const res = await compileDoc(code);
+				await saveFileContent({
+	        projectId: data.project.id,
+	        relativePath: activeFilePath,
+	        body: activeContent
+	      });
+
+				const res = await compileDoc(data.project.id);
 				compiledHtml = res.compiled;
 				compileErrors = res.errors || '';
 			} catch (err) {
