@@ -13,6 +13,7 @@
 	} from '$lib/remotes/projects.remote';
 	import { invalidateAll } from '$app/navigation';
 	import { compileDoc } from '$lib/remotes/compile.remote';
+	import JSZip from 'jszip';
 	import CodeMirrorEditor from '$lib/components/CodeMirrorEditor.svelte';
 	import {
 		FileCode,
@@ -29,7 +30,8 @@
 		MoreVertical,
 		Edit,
 		Copy,
-		FolderOutput
+		FolderOutput,
+		Archive
 	} from '@lucide/svelte';
 
 	let { data } = $props();
@@ -195,6 +197,29 @@
     const a = document.createElement('a');
     a.href = url;
     a.download = file.relativePath;
+    document.body.appendChild(a);
+    a.click();
+    
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+	}
+
+	async function downloadProjectZip() {
+    const zip = new JSZip();
+
+    for (const file of files) {
+        zip.file(file.relativePath, file.body);
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    
+    const safeProjectName = data.project?.name?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'project';
+    a.download = `${safeProjectName}-source.zip`;
+    
     document.body.appendChild(a);
     a.click();
     
@@ -408,6 +433,10 @@
 				<Share2 class="h-4 w-4" />
 				Share
 			</Button>
+			<Button variant="outline" size="sm" onclick={downloadProjectZip} class="gap-1.5">
+        <Archive class="h-4 w-4" />
+        Download Source
+	    </Button>
 			<Button size="sm" disabled class="gap-1.5 opacity-60">
 				<Download class="h-4 w-4" />
 				Export PDF (Coming Soon)
