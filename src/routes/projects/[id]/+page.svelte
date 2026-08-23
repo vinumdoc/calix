@@ -45,6 +45,7 @@
 	let compiledHtml = $state('');
 	let compileErrors = $state('');
 	let isCompiling = $state(false);
+	let isPrinting = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	let newFileName = $state('');
@@ -310,6 +311,39 @@
 		copiedLink = true;
 		setTimeout(() => (copiedLink = false), 2000);
 	}
+	
+	async function downloadPdf() {
+		try {
+			isPrinting = true;
+
+			const res = await fetch('/api/export-pdf', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					html: compiledHtml,
+					title: data.project?.name
+				})
+			});
+
+			if (!res.ok) throw new Error('Generation failed');
+
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${data.project?.name || 'document'}.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error(err);
+		} finally {
+			isPrinting = false;
+		}
+	}
 </script>
 
 <svelte:window onclick={closeMenu} />
@@ -448,9 +482,14 @@
         <Archive class="h-4 w-4" />
         Download Source
 	    </Button>
-			<Button size="sm" disabled class="gap-1.5 opacity-60">
-				<Download class="h-4 w-4" />
-				Export PDF (Coming Soon)
+		
+			<Button 
+				disabled={isPrinting}
+				onclick={downloadPdf}
+				size="sm"
+				class="gap-1.5"
+			>
+				{isPrinting ? 'Generating PDF...' : 'Export to PDF'}
 			</Button>
 		</div>
 	</header>
