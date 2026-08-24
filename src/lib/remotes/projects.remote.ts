@@ -44,21 +44,115 @@ export const createProject = command(
 				ownerId: user.id,
 				name,
 				description: description || '',
-				entryFilePath: 'main.vinum'
+				entryFilePath: 'main.vin'
 			})
 			.returning();
 
-		// Create default entry main.vinum file
+		// Create default entry main.vin file
 		const defaultCode = `[doc [paragraph Hello World]]`;
+		const defaultCocktail = `[doc: {#
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    /* Page & Print Setup */
+    @page {
+      size: A4 portrait;
+      margin: 20mm 15mm 20mm 15mm;
+    }
 
-		await db.insert(table.vinumDocument).values({
-			projectId: newProject.id,
-			relativePath: 'main.vinum',
-			mimeType: 'text/plain',
-			isBinary: false,
-			body: defaultCode,
-			size: Buffer.byteLength(defaultCode, 'utf-8')
-		});
+    /* Base Typography & Styling */
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Page Break Management */
+    h1, h2, h3, h4 {
+      break-after: avoid; /* Don't leave headings orphan at the bottom of a page */
+    }
+
+    table, tr, img, pre, blockquote, figure, .no-break {
+      break-inside: avoid; /* Prevent tables, code blocks, or images from splitting across page cuts */
+    }
+
+    p {
+      orphans: 3;
+      widows: 3;
+    }
+
+    /* Table Formatting for Print */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f8fafc;
+    }
+
+		.page-break {
+			break-before: page; /* Modern CSS standard */
+				page-break-before: always; /* Legacy fallback for older renderers */
+		}
+  </style>
+  </style>
+</head>
+<body>
+#}
+	$*
+{#
+</body></html>
+#}
+
+]
+[title: <h1> $* </h1>]
+[heading: <h2> $* </h2>]
+[subheading: <h3> $* </h3>]
+[paragraph: <p> $* </p>]
+[p: <p> $* </p>]
+[bold: <strong> $* </strong>]
+[b: <strong> $* </strong>]
+[italic: <em> $* </em>]
+[i: <em> $* </em>]
+[list: <ul> $* </ul>]
+[orderedlist: <ol> $* </ol>]
+[item: <li> $* </li>]
+[section: <section> $* </section>]
+[code: <code> $* </code>]
+[codeblock: <pre><code> $* </code></pre>]
+[quote: <blockquote> $* </blockquote>]
+[page-break: <div class="page-break"></div>]`;
+
+		await db.insert(table.vinumDocument).values([
+			{
+				projectId: newProject.id,
+				relativePath: 'main.vin',
+				mimeType: 'text/plain',
+				isBinary: false,
+				body: defaultCode,
+				size: Buffer.byteLength(defaultCode, 'utf-8')
+			},
+			{
+				projectId: newProject.id,
+				relativePath: 'cocktail/html-template.vin',
+				mimeType: 'text/plain',
+				isBinary: false,
+				body: defaultCocktail,
+				size: Buffer.byteLength(defaultCocktail, 'utf-8')
+			}
+		]);
 
 		return newProject;
 	}

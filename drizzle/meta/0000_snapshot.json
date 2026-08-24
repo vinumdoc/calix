@@ -132,7 +132,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'main.vinum'"
+          "default": "'main.vin'"
         },
         "public_access_level": {
           "name": "public_access_level",

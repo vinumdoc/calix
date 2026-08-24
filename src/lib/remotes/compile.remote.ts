@@ -1,99 +1,19 @@
 import { query } from '$app/server';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import { randomUUID } from 'node:crypto';
 import * as v from 'valibot';
 
-const template = `
-[doc: {#
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>
-    /* Page & Print Setup */
-    @page {
-      size: A4 portrait;
-      margin: 20mm 15mm 20mm 15mm;
-    }
+import { db } from '$lib/server/db';
+import * as table from '$lib/server/db/schema';
+import { eq, like, and } from 'drizzle-orm';
 
-    /* Base Typography & Styling */
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 11pt;
-      line-height: 1.6;
-      color: #1a1a1a;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Page Break Management */
-    h1, h2, h3, h4 {
-      break-after: avoid; /* Don't leave headings orphan at the bottom of a page */
-    }
-
-    table, tr, img, pre, blockquote, figure, .no-break {
-      break-inside: avoid; /* Prevent tables, code blocks, or images from splitting across page cuts */
-    }
-
-    p {
-      orphans: 3;
-      widows: 3;
-    }
-
-    /* Table Formatting for Print */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1em 0;
-    }
-
-    th, td {
-      border: 1px solid #e2e8f0;
-      padding: 8px 12px;
-      text-align: left;
-    }
-
-    th {
-      background-color: #f8fafc;
-    }
-
-		.page-break {
-			break-before: page; /* Modern CSS standard */
-				page-break-before: always; /* Legacy fallback for older renderers */
-		}
-  </style>
-  </style>
-</head>
-<body>
-#}
-	$*
-{#
-</body></html>
-#}
-
-]
-[title: <h1> $* </h1>]
-[heading: <h2> $* </h2>]
-[subheading: <h3> $* </h3>]
-[paragraph: <p> $* </p>]
-[p: <p> $* </p>]
-[bold: <strong> $* </strong>]
-[b: <strong> $* </strong>]
-[italic: <em> $* </em>]
-[i: <em> $* </em>]
-[list: <ul> $* </ul>]
-[orderedlist: <ol> $* </ol>]
-[item: <li> $* </li>]
-[section: <section> $* </section>]
-[code: <code> $* </code>]
-[codeblock: <pre><code> $* </code></pre>]
-[quote: <blockquote> $* </blockquote>]
-[page-break: <div class="page-break"></div>]
-`;
-
-export const compileDoc = query(v.string(), async (vinumCode) => {
+export const compileDoc = query(v.string(), async (projectId) => {
 	const VINUM_PATH = '/usr/local/bin/vinumc';
 
-	// Check if vinumc exists
 	if (!existsSync(VINUM_PATH)) {
 		return {
 			compiled: '',
@@ -101,52 +21,61 @@ export const compileDoc = query(v.string(), async (vinumCode) => {
 		};
 	}
 
-	const result = await new Promise<{ compiled: string; errors: string }>((resolve, reject) => {
-		const child = spawn(VINUM_PATH, [], {
-			stdio: ['pipe', 'pipe', 'pipe']
-		});
+	const allFiles = await db
+		.select()
+		.from(table.vinumDocument)
+		.where(eq(table.vinumDocument.projectId, projectId));
 
-		let compiled = '';
-		let errors = '';
+	if (allFiles.length === 0) {
+		return { compiled: '', errors: 'No files found in database to compile.' };
+	}
 
-		child.stdout.on('data', (chunk) => (compiled += chunk));
-		child.stderr.on('data', (chunk) => (errors += chunk));
+	const tempDir = path.join(os.tmpdir(), `vinum-${randomUUID()}`);
+	await fs.mkdir(tempDir, { recursive: true });
 
-		// Handle process errors
-		child.on('error', (error) => {
-			console.error('Process spawn error:', error);
-			reject(new Error(`Failed to spawn vinumc: ${error.message}`));
-		});
+	const args: string[] = [];
+	// TODO: remove when vinumc allows multiple source files
+	let sourceContent = '';
 
-		// Handle stdin errors
-		child.stdin.on('error', (error) => {
-			console.error('Stdin error:', error);
-			errors += JSON.stringify(error);
-			resolve({ compiled, errors });
-			// reject(new Error(`Failed to write to vinumc stdin: ${error.message}`));
-		});
+	try {
+		for (const file of allFiles) {
+			if (file.relativePath.startsWith('cocktail/')) {
+				const fullPath = path.join(tempDir, file.relativePath);
+				await fs.mkdir(path.dirname(fullPath), { recursive: true });
+				await fs.writeFile(fullPath, file.body);
 
-		child.on('close', (code) => {
-			const exitMessage = code === null ? '' : ` with code ${code}`;
-			console.log(`vinumc process exited${exitMessage}`);
-			resolve({ compiled, errors });
-		});
-
-		// Write to stdin with error handling
-		try {
-			child.stdin.write(template);
-			child.stdin.write(vinumCode);
-			child.stdin.end();
-		} catch (error) {
-			console.error('Write error:', error, errors);
-
-			// reject(
-			// 	new Error(`Failed to write code to vinumc: ${errors}`, {
-			// 		cause: error
-			// 	})
-			// );
+				args.push('--effect', fullPath);
+			} else {
+				sourceContent += `\n\n${file.body}\n`;
+			}
 		}
-	});
 
-	return result;
+		// TODO: remove when vinumc allows multiple source files
+		const entryPath = path.join(tempDir, '_source.vin');
+    await fs.writeFile(entryPath, sourceContent);
+    args.push(entryPath);
+
+		const result = await new Promise<{ compiled: string; errors: string }>((resolve, reject) => {
+			const child = spawn(VINUM_PATH, args, {
+				stdio: ['ignore', 'pipe', 'pipe'] 
+			});
+
+			let compiled = '';
+			let errors = '';
+
+			child.stdout.on('data', (chunk) => (compiled += chunk));
+			child.stderr.on('data', (chunk) => (errors += chunk));
+
+			child.on('error', (error) => reject(new Error(`Failed to spawn vinumc: ${error.message}`)));
+
+			child.on('close', (code) => {
+				resolve({ compiled, errors });
+			});
+		});
+
+		return result;
+
+	} finally {
+		await fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
+	}
 });

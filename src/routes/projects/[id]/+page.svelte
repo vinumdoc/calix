@@ -40,7 +40,7 @@
 	let sourceFiles = $derived(files.filter(f => !f.relativePath.startsWith('cocktail/')));
 	let cocktailFiles = $derived(files.filter(f => f.relativePath.startsWith('cocktail/')));
 	
-	let activeFilePath = $state('main.vinum');
+	let activeFilePath = $state('main.vin');
 	let activeContent = $state('');
 	let compiledHtml = $state('');
 	let compileErrors = $state('');
@@ -72,23 +72,34 @@
 		if (file && !file.isBinary) {
 			activeContent = file.body;
 			editorRef?.setValue(file.body);
-			triggerDebouncedCompile(file.body);
+			triggerDebouncedCompile();
 		}
 	}
 
 	function handleCodeChange(newCode: string) {
 		activeContent = newCode;
-		triggerDebouncedCompile(newCode);
+		
+		const currentFile = files.find((f) => f.relativePath === activeFilePath);
+    if (currentFile) {
+        currentFile.body = newCode;
+    }
+    
+		triggerDebouncedCompile();
 	}
 
-	function triggerDebouncedCompile(code: string) {
+	function triggerDebouncedCompile() {
 		if (debounceTimer) clearTimeout(debounceTimer);
 		isCompiling = true;
 
 		debounceTimer = setTimeout(async () => {
 			try {
-				console.log(code);
-				const res = await compileDoc(code);
+				await saveFileContent({
+	        projectId: data.project.id,
+	        relativePath: activeFilePath,
+	        body: activeContent
+	      });
+
+				const res = await compileDoc(data.project.id);
 				compiledHtml = res.compiled;
 				compileErrors = res.errors || '';
 			} catch (err) {
@@ -103,9 +114,9 @@
 		e.preventDefault();
 		if (!newFileName.trim()) return;
 
-		const path = newFileName.trim().endsWith('.vinum')
+		const path = newFileName.trim().endsWith('.vin')
 			? newFileName.trim()
-			: `${newFileName.trim()}.vinum`;
+			: `${newFileName.trim()}.vin`;
 
 		await saveFileContent({
 			projectId: data.project.id,
@@ -121,13 +132,13 @@
 	}
 
 	async function handleDeleteFile(path: string) {
-		if (path === 'main.vinum') {
+		if (path === 'main.vin') {
 			alert('Cannot delete the main entry file.');
 			return;
 		}
 		if (confirm(`Delete file "${path}"?`)) {
 			await deleteFile({ projectId: data.project.id, relativePath: path });
-			activeFilePath = 'main.vinum';
+			activeFilePath = 'main.vin';
 		}
 
 		await invalidateAll();
@@ -137,9 +148,9 @@
     e.preventDefault();
     if (!renameInput.trim() || !fileToRename) return;
 
-    const formattedName = renameInput.trim().endsWith('.vinum')
+    const formattedName = renameInput.trim().endsWith('.vin')
         ? renameInput.trim()
-        : `${renameInput.trim()}.vinum`;
+        : `${renameInput.trim()}.vin`;
 
 	  const isCocktail = fileToRename.startsWith('cocktail/');
 	  const newPath = isCocktail ? `cocktail/${formattedName}` : formattedName;
@@ -323,7 +334,7 @@
             {/if}
             <span class="truncate">{file.relativePath.replace('cocktail/', '')}</span>
         </div>
-        {#if file.relativePath !== 'main.vinum'}
+        {#if file.relativePath !== 'main.vin'}
             <div class="relative flex items-center">
                 <button
                     class="p-0.5 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
@@ -565,7 +576,7 @@
 			<div class="w-full max-w-sm space-y-4 rounded-xl border bg-background p-6 shadow-xl">
 				<h3 class="text-lg font-bold">New Vinum File</h3>
 				<form onsubmit={handleCreateFile} class="space-y-4">
-					<Input placeholder="e.g. section1.vinum" bind:value={newFileName} required />
+					<Input placeholder="e.g. section1.vin" bind:value={newFileName} required />
 					<div class="flex justify-end gap-2">
 						<Button type="button" variant="outline" onclick={() => (showNewFileModal = false)}>
 							Cancel
@@ -583,7 +594,7 @@
       <div class="w-full max-w-sm space-y-4 rounded-xl border bg-background p-6 shadow-xl">
         <h3 class="text-lg font-bold">Rename File</h3>
         <form onsubmit={submitRename} class="space-y-4">
-          <Input placeholder="e.g. new_name.vinum" bind:value={renameInput} required />
+          <Input placeholder="e.g. new_name.vin" bind:value={renameInput} required />
           <div class="flex justify-end gap-2">
             <Button type="button" variant="outline" onclick={() => (showRenameModal = false)}>
               Cancel
