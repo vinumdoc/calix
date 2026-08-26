@@ -4,6 +4,9 @@
 	import { cn } from '$lib/utils.js';
 	import Logo from './Logo.svelte';
 	import * as Nav from '$lib/components/ui/navigation-menu';
+
+
+	let { user }: { user: { id: string; name: string } | undefined } = $props();
 </script>
 
 <Nav.Root class="w-full justify-between">
@@ -14,19 +17,21 @@
 				<span class="hidden font-bold sm:inline-block"> Vinum </span>
 			</Nav.Link>
 		</Nav.Item>
-		<Nav.Item>
-			<Nav.Link
-				href={resolve('/projects')}
-				class={cn(
-					'transition-colors hover:text-foreground/80',
-					page.url.pathname.startsWith(resolve('/projects'))
-						? 'text-foreground font-semibold'
-						: 'text-foreground/60'
-				)}
-			>
-				Projects
-			</Nav.Link>
-		</Nav.Item>
+		{#if user}
+			<Nav.Item>
+				<Nav.Link
+					href={resolve('/projects')}
+					class={cn(
+						'transition-colors hover:text-foreground/80',
+						page.url.pathname.startsWith(resolve('/projects'))
+							? 'text-foreground font-semibold'
+							: 'text-foreground/60'
+					)}
+				>
+					Projects
+				</Nav.Link>
+			</Nav.Item>
+		{/if}
 		<Nav.Item>
 			<Nav.Link
 				href={resolve('/docs/01-getting-started/01-introduction')}
@@ -40,18 +45,20 @@
 				Documentation
 			</Nav.Link>
 		</Nav.Item>
-		<Nav.Item>
-			<Nav.Link
-				href={resolve('/settings')}
-				class={cn(
-					'transition-colors hover:text-foreground/80',
-					page.url.pathname.startsWith(resolve('/settings'))
-						? 'text-foreground font-semibold'
-						: 'text-foreground/60'
-				)}
-			>
-				Settings
-			</Nav.Link>
-		</Nav.Item>
+		{#if user}
+			<Nav.Item>
+				<Nav.Link
+					href={resolve('/settings')}
+					class={cn(
+						'transition-colors hover:text-foreground/80',
+						page.url.pathname.startsWith(resolve('/settings'))
+							? 'text-foreground font-semibold'
+							: 'text-foreground/60'
+					)}
+				>
+					Settings
+				</Nav.Link>
+			</Nav.Item>
+		{/if}
 	</Nav.List>
 </Nav.Root>
