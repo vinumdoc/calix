@@ -15,6 +15,7 @@
 	import { compileDoc } from '$lib/remotes/compile.remote';
 	import JSZip from 'jszip';
 	import CodeMirrorEditor from '$lib/components/CodeMirrorEditor.svelte';
+	import Resizable from '$lib/components/Resizable.svelte';
 	import {
 		FileCode,
 		Plus,
@@ -546,8 +547,12 @@
 	</aside>
 
 		<!-- Center Code Editor Pane -->
+	<Resizable
+		resizableTop={false} resizableLeft={false} resizableBottom={false}
+		initialWidth="40%" initialHeight="100%"
+	>
 		<div
-			class="flex flex-1 flex-col border-r bg-background {activeTab === 'preview'
+			class="flex flex-1 flex-col border-r h-full bg-background {activeTab === 'preview'
 				? 'hidden md:flex'
 				: 'flex'}"
 		>
@@ -568,6 +573,7 @@
 				/>
 			</div>
 		</div>
+	</Resizable>
 
 		<!-- Right Live HTML Preview Pane -->
 		<div
