@@ -497,7 +497,8 @@
 	<!-- Main Workspace Split Pane -->
 	<div class="flex flex-1 overflow-hidden">
 		<!-- Sidebar: File Tree & Assets -->
-		<aside class="hidden w-64 flex-col border-r bg-muted/20 md:flex h-full overflow-hidden">
+		<Resizable resizableTop={false} resizableLeft={false} resizableBottom={false}>
+		<aside class="hidden flex-col border-r bg-muted/20 md:flex h-full overflow-hidden">
 	    <div class="flex flex-col flex-1 overflow-hidden">
         <!-- Source Files -->
         <div class="flex flex-col flex-1 overflow-hidden p-3">
@@ -523,28 +524,31 @@
 
         <!-- Cocktail Files -->
         {#if cocktailFiles.length > 0}
-          <div class="flex flex-col flex-1 overflow-hidden p-3 border-t bg-muted/10">
-	          <div class="flex items-center justify-between mb-3 shrink-0">
-              <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Cocktail Files</span>
-            </div>
-                
-            <nav class="flex-1 space-y-1 overflow-y-auto pr-1">
-                {#each cocktailFiles as file (file.id)}
-                    {@render fileItem(file)}
-                {/each}
-            </nav>
-          </div>
+					<Resizable resizableRight={false} resizableLeft={false} resizableBottom={false}>
+						<div class="flex flex-col flex-1 overflow-hidden p-3 border-t bg-muted/10">
+							<div class="flex items-center justify-between mb-3 shrink-0">
+								<span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Cocktail Files</span>
+							</div>
+									
+							<nav class="flex-1 space-y-1 overflow-y-auto pr-1">
+									{#each cocktailFiles as file (file.id)}
+											{@render fileItem(file)}
+									{/each}
+							</nav>
+						</div>
+					</Resizable>
         {/if}
     </div>
 
     <!-- Entry Document -->
-    <div class="shrink-0 border-t p-3">
-      <div class="space-y-1 rounded-lg border bg-card p-3 text-xs text-muted-foreground">
-        <p class="font-semibold text-foreground">Entry Document</p>
-        <p class="truncate">{data.project?.entryFilePath}</p>
-      </div>
-    </div>
+			<div class="shrink-0 border-t p-3">
+				<div class="space-y-1 rounded-lg border bg-card p-3 text-xs text-muted-foreground">
+					<p class="font-semibold text-foreground">Entry Document</p>
+					<p class="truncate">{data.project?.entryFilePath}</p>
+				</div>
+			</div>
 	</aside>
+	</Resizable>
 
 		<!-- Center Code Editor Pane -->
 	<Resizable
