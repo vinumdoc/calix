@@ -10,6 +10,11 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       - '5434:5432'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-calix_user} -d calix_db"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
     profiles:
       - dev
       - dev-local
@@ -38,8 +43,10 @@ services:
       VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
       PUBLIC_YJS_WS_URL: ${PUBLIC_YJS_WS_URL:-ws://localhost:1234}
     depends_on:
-      - db
-      - yjs-ws
+      db:
+        condition: service_healthy
+      yjs-ws:
+        condition: service_started
     profiles:
       - dev-release
 
@@ -62,8 +69,10 @@ services:
       VINUMC_SOURCE: rolling
       PUBLIC_YJS_WS_URL: ${PUBLIC_YJS_WS_URL:-ws://localhost:1234}
     depends_on:
-      - db
-      - yjs-ws
+      db:
+        condition: service_healthy
+      yjs-ws:
+        condition: service_started
     profiles:
       - dev-rolling
 
@@ -90,8 +99,10 @@ services:
       VINUMC_VERSION: ${VINUMC_VERSION:-vinumc-v0.1.0-alpha}
       PUBLIC_YJS_WS_URL: ${PUBLIC_YJS_WS_URL:-ws://localhost:1234}
     depends_on:
-      - db
-      - yjs-ws
+      db:
+        condition: service_healthy
+      yjs-ws:
+        condition: service_started
     profiles:
       - dev-local
 
@@ -112,8 +123,10 @@ services:
     image: calix-prod
     env_file: .env
     depends_on:
-      - db
-      - yjs-ws
+      db:
+        condition: service_healthy
+      yjs-ws:
+        condition: service_started
     ports:
       - '${HOST_PORT:-3000}:3000'
     profiles:
@@ -130,7 +143,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       YJS_WS_PORT: 1234
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     profiles:
       - dev
       - dev-release
