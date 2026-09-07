@@ -525,7 +525,7 @@
         <!-- Cocktail Files -->
         {#if cocktailFiles.length > 0}
 					<Resizable resizableRight={false} resizableLeft={false} resizableBottom={false}>
-						<div class="flex flex-col flex-1 overflow-hidden p-3 border-t bg-muted/10">
+						<div class="flex flex-col flex-1 overflow-hidden h-full w-full p-3 border-t bg-muted/10">
 							<div class="flex items-center justify-between mb-3 shrink-0">
 								<span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Cocktail Files</span>
 							</div>
