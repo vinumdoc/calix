@@ -3,7 +3,7 @@ import { resolve } from '$app/paths';
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import * as table from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 
 export const load: PageServerLoad = async (event) => {
 	const projectId = event.params.id;
@@ -47,7 +47,8 @@ export const load: PageServerLoad = async (event) => {
 			updatedAt: table.vinumDocument.updatedAt
 		})
 		.from(table.vinumDocument)
-		.where(eq(table.vinumDocument.projectId, projectId));
+		.where(eq(table.vinumDocument.projectId, projectId))
+		.orderBy(asc(table.vinumDocument.relativePath));
 
 	// Compute canEdit boolean
 	const canEdit =
