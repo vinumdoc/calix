@@ -14,6 +14,7 @@
 	let showCreateModal = $state(false);
 	let newProjectName = $state('');
 	let newProjectDesc = $state('');
+	let newProjectEntryFile = $state('main.vin');
 	let creating = $state(false);
 
 	const projects = $derived(data.projects || []);
@@ -33,11 +34,13 @@
 		try {
 			await createProject({
 				name: newProjectName,
-				description: newProjectDesc
+				description: newProjectDesc,
+				entryFilePath: newProjectEntryFile.trim() || 'main.vin'
 			});
 			showCreateModal = false;
 			newProjectName = '';
 			newProjectDesc = '';
+			newProjectEntryFile = 'main.vin';
 			await invalidateAll();
 		} catch (err) {
 			console.error('Failed to create project:', err);
@@ -105,9 +108,16 @@
 						</Card.Description>
 					</Card.Header>
 					<Card.Content class="pt-4 border-t flex items-center justify-between">
-						<span class="text-xs text-muted-foreground">
-							{new Date(project.updatedAt).toLocaleDateString()}
-						</span>
+						<div class="flex flex-col gap-0.5">
+							<span class="text-xs text-muted-foreground">
+								{new Date(project.updatedAt).toLocaleDateString()}
+							</span>
+							{#if project.entryFilePath}
+								<span class="text-[11px] font-mono text-muted-foreground/80">
+									entry: {project.entryFilePath}
+								</span>
+							{/if}
+						</div>
 						<Button href={resolve(`/projects/${project.id}`)} size="sm" class="gap-1">
 							Open IDE
 							<ExternalLink class="h-3.5 w-3.5" />
@@ -124,13 +134,20 @@
 			<Card.Root class="w-full max-w-md bg-background shadow-xl">
 				<Card.Header>
 					<Card.Title>Create New Vinum Project</Card.Title>
-					<Card.Description>Give your project a name and optional description.</Card.Description>
+					<Card.Description>Give your project a name, entry file, and optional description.</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					<form onsubmit={handleCreateProject} class="space-y-4">
 						<div class="space-y-2">
 							<label for="name" class="text-sm font-medium">Project Name</label>
 							<Input id="name" placeholder="e.g. Organic Chemistry Paper" required bind:value={newProjectName} />
+						</div>
+						<div class="space-y-2">
+							<label for="entryFile" class="text-sm font-medium">Entry File</label>
+							<Input id="entryFile" placeholder="main.vin" bind:value={newProjectEntryFile} />
+							<p class="text-xs text-muted-foreground">
+								The primary .vin file created with your project and compiled for preview.
+							</p>
 						</div>
 						<div class="space-y-2">
 							<label for="desc" class="text-sm font-medium">Description (optional)</label>
