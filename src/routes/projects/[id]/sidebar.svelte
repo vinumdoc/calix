@@ -14,16 +14,20 @@
 		ref = $bindable(null),
 		root,
 		activeFile = null,
+		entryFile = null,
 		onSelect,
 		onCreateFile,
 		onDeleteFile,
+		onSetEntryFile,
 		...restProps
 	}: ComponentProps<typeof Sidebar.Root> & {
 		root: ProjectDirectory;
 		activeFile?: string | null;
+		entryFile?: string | null;
 		onSelect?: (path: string) => void;
 		onCreateFile?: (path: string) => void;
 		onDeleteFile?: (path: string) => void;
+		onSetEntryFile?: (path: string) => void;
 	} = $props();
 
 	function handleSelect(path: string) {
@@ -32,6 +36,10 @@
 
 	function handleDelete(e: MouseEvent, path: string) {
 		e.stopPropagation();
+		if (entryFile && path === entryFile) {
+			alert('Cannot delete the active entry file. Please set another file as the entry file first.');
+			return;
+		}
 		if (confirm(`Are you sure you want to delete "${path}"?`)) {
 			onDeleteFile?.(path);
 		}
@@ -103,23 +111,32 @@
 	{@const fullPath = basePath ? `${basePath}/${item.name}` : item.name}
 
 	{#if item.type === 'file'}
-		<Sidebar.MenuButton
-			isActive={activeFile === fullPath}
-			onclick={() => handleSelect(fullPath)}
-			class="group/file justify-between pr-1"
-		>
-			<div class="flex items-center gap-2">
-				<FileIcon />
-				{item.name}
-			</div>
-			<button
-				onclick={(e) => handleDelete(e, fullPath)}
-				class="text-muted-foreground opacity-0 transition-opacity group-hover/file:opacity-100 hover:text-destructive"
-				title="Delete File"
+		<Sidebar.MenuItem>
+			<Sidebar.MenuButton
+				isActive={activeFile === fullPath}
+				onclick={() => handleSelect(fullPath)}
+				class="group/file justify-between pr-1"
 			>
-				<Trash2Icon class="h-4 w-4" />
-			</button>
-		</Sidebar.MenuButton>
+				<div class="flex items-center gap-2">
+					<FileIcon />
+					{item.name}
+					{#if entryFile === fullPath}
+						<span class="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+							Entry
+						</span>
+					{/if}
+				</div>
+			</Sidebar.MenuButton>
+			{#if entryFile !== fullPath}
+				<Sidebar.MenuAction
+					onclick={(e) => handleDelete(e, fullPath)}
+					class="text-muted-foreground opacity-0 transition-opacity group-hover/file:opacity-100 hover:text-destructive"
+					title="Delete File"
+				>
+					<Trash2Icon class="h-4 w-4" />
+				</Sidebar.MenuAction>
+			{/if}
+		</Sidebar.MenuItem>
 	{:else}
 		<Sidebar.MenuItem>
 			<Collapsible.Root

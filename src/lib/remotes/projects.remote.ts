@@ -2,7 +2,7 @@ import { command, getRequestEvent, query } from '$app/server';
 import { db } from '$lib/server/db';
 import * as table from '$lib/server/db/schema';
 import * as v from 'valibot';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 
 export const listProjects = query(async () => {
@@ -31,12 +31,19 @@ export const listProjects = query(async () => {
 export const createProject = command(
 	v.object({
 		name: v.pipe(v.string(), v.minLength(1), v.maxLength(100)),
-		description: v.optional(v.string())
+		description: v.optional(v.string()),
+		entryFilePath: v.optional(v.string())
 	}),
-	async ({ name, description }) => {
+	async ({ name, description, entryFilePath }) => {
 		const event = getRequestEvent();
 		const user = event.locals.user;
 		if (!user) throw error(401, 'Unauthorized');
+
+		const rawPath = entryFilePath?.trim();
+		let resolvedEntryPath = rawPath ? (rawPath.endsWith('.vin') ? rawPath : `${rawPath}.vin`) : 'main.vin';
+		if (resolvedEntryPath.startsWith('cocktail/')) {
+			resolvedEntryPath = resolvedEntryPath.replace(/^cocktail\//, '') || 'main.vin';
+		}
 
 		const [newProject] = await db
 			.insert(table.vinumProject)
@@ -44,11 +51,11 @@ export const createProject = command(
 				ownerId: user.id,
 				name,
 				description: description || '',
-				entryFilePath: 'main.vin'
+				entryFilePath: resolvedEntryPath
 			})
 			.returning();
 
-		// Create default entry main.vin file
+		// Create default entry file
 		const defaultCode = `[doc [paragraph Hello World]]`;
 		const defaultCocktail = `[doc: {#
 <html>
@@ -138,7 +145,7 @@ export const createProject = command(
 		await db.insert(table.vinumDocument).values([
 			{
 				projectId: newProject.id,
-				relativePath: 'main.vin',
+				relativePath: resolvedEntryPath,
 				mimeType: 'text/plain',
 				isBinary: false,
 				body: defaultCode,
@@ -199,7 +206,8 @@ export const getProjectWithFiles = query(v.string(), async (projectId) => {
 			updatedAt: table.vinumDocument.updatedAt
 		})
 		.from(table.vinumDocument)
-		.where(eq(table.vinumDocument.projectId, projectId));
+		.where(eq(table.vinumDocument.projectId, projectId))
+		.orderBy(asc(table.vinumDocument.relativePath));
 
 	return {
 		project,
@@ -254,6 +262,34 @@ export const saveFileContent = command(
 	}
 );
 
+async function verifyProjectEditAccess(projectId: string, userId: string) {
+	const [project] = await db
+		.select()
+		.from(table.vinumProject)
+		.where(eq(table.vinumProject.id, projectId));
+
+	if (!project) throw error(404, 'Project not found');
+
+	const isOwner = project.ownerId === userId;
+	if (!isOwner && project.publicAccessLevel !== 'edit') {
+		const [access] = await db
+			.select()
+			.from(table.vinumProjectAccess)
+			.where(
+				and(
+					eq(table.vinumProjectAccess.projectId, projectId),
+					eq(table.vinumProjectAccess.userId, userId)
+				)
+			);
+
+		if (!access || (access.role !== 'edit' && access.role !== 'admin')) {
+			throw error(403, 'Forbidden: You do not have edit access to this project.');
+		}
+	}
+
+	return project;
+}
+
 export const deleteFile = command(
 	v.object({
 		projectId: v.string(),
@@ -263,6 +299,12 @@ export const deleteFile = command(
 		const event = getRequestEvent();
 		const user = event.locals.user;
 		if (!user) throw error(401, 'Unauthorized');
+
+		const proj = await verifyProjectEditAccess(projectId, user.id);
+
+		if (proj.entryFilePath === relativePath) {
+			throw error(400, 'Cannot delete the active entry file.');
+		}
 
 		await db
 			.delete(table.vinumDocument)
@@ -288,6 +330,8 @@ export const renameFile = command(
         const user = event.locals.user;
         if (!user) throw error(401, 'Unauthorized');
 
+        const proj = await verifyProjectEditAccess(projectId, user.id);
+
         await db
             .update(table.vinumDocument)
             .set({ relativePath: newPath })
@@ -298,8 +342,106 @@ export const renameFile = command(
                 )
             );
 
+        // Auto-sync project entryFilePath if the entry file was renamed
+        if (proj.entryFilePath === oldPath) {
+            await db
+                .update(table.vinumProject)
+                .set({ entryFilePath: newPath, updatedAt: new Date() })
+                .where(eq(table.vinumProject.id, projectId));
+        }
+
         return { success: true, newPath };
     }
+);
+
+export const updateProjectEntryFile = command(
+	v.object({
+		projectId: v.string(),
+		entryFilePath: v.pipe(v.string(), v.minLength(1))
+	}),
+	async ({ projectId, entryFilePath }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) throw error(401, 'Unauthorized');
+
+		await verifyProjectEditAccess(projectId, user.id);
+
+		if (entryFilePath.startsWith('cocktail/')) {
+			throw error(400, 'Cocktail files cannot be set as the entry document.');
+		}
+
+		// Verify file exists in project documents and is not binary
+		const [doc] = await db
+			.select()
+			.from(table.vinumDocument)
+			.where(
+				and(
+					eq(table.vinumDocument.projectId, projectId),
+					eq(table.vinumDocument.relativePath, entryFilePath)
+				)
+			);
+
+		if (!doc) {
+			throw error(404, `File "${entryFilePath}" does not exist in this project.`);
+		}
+		if (doc.isBinary) {
+			throw error(400, 'Binary asset files cannot be set as the entry document.');
+		}
+
+		await db
+			.update(table.vinumProject)
+			.set({ entryFilePath, updatedAt: new Date() })
+			.where(eq(table.vinumProject.id, projectId));
+
+		return { success: true, entryFilePath };
+	}
+);
+
+export const updateProjectDetails = command(
+	v.object({
+		projectId: v.string(),
+		name: v.pipe(v.string(), v.minLength(1), v.maxLength(100)),
+		description: v.optional(v.string()),
+		entryFilePath: v.optional(v.string())
+	}),
+	async ({ projectId, name, description, entryFilePath }) => {
+		const event = getRequestEvent();
+		const user = event.locals.user;
+		if (!user) throw error(401, 'Unauthorized');
+
+		await verifyProjectEditAccess(projectId, user.id);
+
+		const updates: Partial<typeof table.vinumProject.$inferInsert> = {
+			name,
+			description: description || '',
+			updatedAt: new Date()
+		};
+
+		if (entryFilePath) {
+			if (entryFilePath.startsWith('cocktail/')) {
+				throw error(400, 'Cocktail files cannot be set as the entry document.');
+			}
+			const [doc] = await db
+				.select()
+				.from(table.vinumDocument)
+				.where(
+					and(
+						eq(table.vinumDocument.projectId, projectId),
+						eq(table.vinumDocument.relativePath, entryFilePath)
+					)
+				);
+			if (!doc) throw error(404, `File "${entryFilePath}" not found.`);
+			if (doc.isBinary) throw error(400, 'Binary assets cannot be the entry document.');
+			updates.entryFilePath = entryFilePath;
+		}
+
+		await db
+			.update(table.vinumProject)
+			.set(updates)
+			.where(eq(table.vinumProject.id, projectId));
+
+		return { success: true };
+	}
 );
 
 export const deleteProject = command(v.string(), async (projectId) => {
