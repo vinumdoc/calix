@@ -115,7 +115,7 @@
 		e.preventDefault();
 		if (!newFileName.trim()) return;
 
-		const path = newFileName.trim().endsWith('.vin')
+		const path = hasFileExtension(newFileName.trim())
 			? newFileName.trim()
 			: `${newFileName.trim()}.vin`;
 
@@ -149,7 +149,7 @@
     e.preventDefault();
     if (!renameInput.trim() || !fileToRename) return;
 
-    const formattedName = renameInput.trim().endsWith('.vin')
+    const formattedName = hasFileExtension(renameInput.trim())
         ? renameInput.trim()
         : `${renameInput.trim()}.vin`;
 
@@ -254,6 +254,10 @@
 		});
 
 		if (uploadFileInput) uploadFileInput.value = '';
+	}
+
+	function hasFileExtension(filename: string): boolean {
+		return /\.[^\\/]+$/.test(filename);
 	}
 
 	let publicAccess = $state(data.project.publicAccessLevel || 'none');
